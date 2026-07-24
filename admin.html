@@ -422,12 +422,20 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
   .home-ministat-val{font-size:17px}
   .home-ministat-label{font-size:10px}
 
-  /* ── 파이프라인 칸반: 가로 스크롤 ── */
-  .pipeline-wrap{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
-  .pipeline-col{min-width:240px}
+  /* ── 파이프라인: 단계별로 세로 배치 (가로 스크롤 대신) ── */
+  .pipeline-wrap{flex-direction:column;overflow:visible !important;border:none;border-radius:0;gap:10px}
+  .pipeline-col{min-width:0;width:100%;border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .col-body{min-height:0 !important;padding:8px}
+  .col-header{background:var(--surface2)}
 
-  /* ── 공고 카드 그리드 1열 ── */
-  .job-grid{grid-template-columns:1fr !important}
+  /* ── 공고 현황: 1열로 쌓되 카드 내부는 가로 활용 ── */
+  .job-dash-grid{grid-template-columns:1fr !important;gap:12px}
+  .job-dash-card{padding:16px}
+  .job-dash-card-title{font-size:16px;padding-right:60px}
+  .job-dash-card-dept{font-size:12px;margin-bottom:12px}
+  .job-dash-card-stats{grid-template-columns:repeat(4,1fr) !important;gap:6px !important}
+  .job-dash-stat{padding:8px 4px;min-width:0}
+  .job-dash-stat-val{font-size:20px}
 
   /* ── 지원자 상세 모달: 전체화면 ── */
   .modal{width:100vw !important;max-width:100vw}
@@ -438,6 +446,26 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
 
   /* 모바일에서 숨길 것: 워드 이력서 다운로드 */
   .pc-only{display:none !important}
+
+  /* ── 면접 세션: 채팅 숨김 + 이력서/평가표 탭 전환 ── */
+  .iv-session-grid{display:block !important;height:auto !important}
+  .iv-chat-panel{display:none !important}
+  .iv-resume-panel, .iv-eval-panel{
+    height:auto;max-height:none;overflow-y:visible;
+    margin-top:12px;
+  }
+  /* 탭으로 하나만 보이게 */
+  body.iv-tab-resume .iv-eval-panel{display:none !important}
+  body.iv-tab-eval .iv-resume-panel{display:none !important}
+
+  /* 모바일 탭 바 */
+  .iv-mobile-tabs{display:flex !important;gap:6px;margin-top:12px}
+  .iv-mobile-tab{flex:1;padding:11px 8px;border-radius:var(--rxs);border:1px solid var(--border);background:var(--surface);font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'Pretendard',sans-serif}
+  .iv-mobile-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* 합/불 버튼을 화면 최상단에 크게 */
+  .iv-decision-row{display:flex !important;gap:8px}
+  .iv-decision-row .btn{flex:1;padding:14px 8px;font-size:15px;font-weight:700}
 
   /* ── 면접 진행: 캘린더/리스트 세로 배치 ── */
   .iv-room-layout{grid-template-columns:1fr;gap:14px}
@@ -473,6 +501,7 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
 /* PC에서는 햄버거 버튼 숨김 */
 .mobile-menu-btn{display:none}
 .mobile-backdrop{display:none}
+.iv-mobile-tabs{display:none}
 </style>
 </head>
 <body>
@@ -2317,6 +2346,11 @@ function showPage(name, el, skipHistory) {
   ['Home','Dashboard','Pipeline','Jobs','Candidates','Stats','Admins','Dispatch','DispatchDetail','DispatchAgencies','DispatchAdmins','Interviewroom','InterviewSession'].forEach(p=>
     document.getElementById('page'+p)?.classList.toggle('hidden', p.toLowerCase()!==name.toLowerCase())
   );
+  // 면접 세션 전용 모바일 탭 클래스는 다른 페이지로 나갈 때 정리
+  if (name !== 'interviewsession') {
+    document.body.classList.remove('iv-tab-resume', 'iv-tab-eval');
+  }
+
   if(name==='home') loadHome();
   if(name==='dashboard') loadDashboard();
   if(name==='admins') loadAdmins();
@@ -4181,6 +4215,9 @@ async function openInterviewSession(appId, isDispatch) {
   _ivSessionRound = app?.stage === '2차면접' ? 2 : 1;
   document.getElementById('ivSessionTitle').textContent = `🎤 ${app?.name||'-'} 면접 진행 중 (${_ivSessionRound}차)`;
   await renderInterviewSession(app);
+  // 모바일: 기본 탭을 이력서로
+  document.body.classList.remove('iv-tab-eval');
+  document.body.classList.add('iv-tab-resume');
   await initChat(_ivSessionAppId, isDispatch, _ivSessionRound);
 }
 
@@ -4257,8 +4294,12 @@ async function renderInterviewSession(app) {
     : `<div style="width:80px;height:100px;background:var(--surface2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3);flex-shrink:0">👤</div>`;
 
   c.innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:16px">
+    <div class="iv-decision-row" style="display:flex;gap:8px;margin-bottom:16px">
       ${passBtn}${failBtn}
+    </div>
+    <div class="iv-mobile-tabs">
+      <button class="iv-mobile-tab active" id="ivTabResume" onclick="switchIvMobileTab('resume')">📄 이력서</button>
+      <button class="iv-mobile-tab" id="ivTabEval" onclick="switchIvMobileTab('eval')">📝 면접평가표</button>
     </div>
     <div class="iv-session-grid">
       <!-- 왼쪽: 이력서 -->
@@ -5132,6 +5173,15 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 // 모바일 대응
 // ══════════════════════════════════════════════════════
 function isMobile() { return window.innerWidth <= 768; }
+
+// 면접 세션: 모바일에서 이력서 / 평가표 탭 전환
+function switchIvMobileTab(tab) {
+  document.body.classList.remove('iv-tab-resume', 'iv-tab-eval');
+  document.body.classList.add(tab === 'eval' ? 'iv-tab-eval' : 'iv-tab-resume');
+  document.getElementById('ivTabResume')?.classList.toggle('active', tab !== 'eval');
+  document.getElementById('ivTabEval')?.classList.toggle('active', tab === 'eval');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 function openMobileSidebar() {
   document.getElementById('sidebar')?.classList.add('mobile-open');
