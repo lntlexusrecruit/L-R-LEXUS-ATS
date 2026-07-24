@@ -22,6 +22,9 @@
   .slot-check{display:none;color:#534AB7;font-size:18px;margin-left:auto}
   .slot.selected .slot-check{display:block}
   .slot-inner{display:flex;align-items:center;gap:12px}
+  .slot.blocked{opacity:0.45;cursor:not-allowed;border-color:#E8E7E2;background:#F5F4F0}
+  .slot.blocked:hover{border-color:#E8E7E2;background:#F5F4F0}
+  .slot-blocked-label{font-size:11px;color:#999;font-weight:500;margin-left:auto;white-space:nowrap}
   .btn{width:100%;padding:16px;border-radius:10px;font-size:15px;font-weight:600;border:none;cursor:pointer;margin-top:8px;transition:all .2s}
   .btn-primary{background:#534AB7;color:#fff}
   .btn-primary:hover{background:#4239A3}
@@ -129,14 +132,14 @@ function showSlots(name, round, slots) {
     <div id="timerBadge" style="background:#FEF3E2;color:#7A3D00;font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;text-align:center;margin-bottom:16px">⏱ 로딩 중...</div>
     <div id="slotList">
       ${slots.map(s => `
-        <div class="slot" id="slot-${s.id}" onclick="selectSlot('${s.id}')">
+        <div class="slot${s.is_blocked ? ' blocked' : ''}" id="slot-${s.id}" ${s.is_blocked ? '' : `onclick="selectSlot('${s.id}')"`}>
           <div class="slot-inner">
             <div style="flex:1">
               <div class="slot-date">${formatDate(s.slot_date)}</div>
               <div class="slot-time">${formatTime(s.slot_time)}${s.slot_time_end ? ' ~ ' + formatTime(s.slot_time_end) : ''}</div>
               ${s.slot_location ? `<div class="slot-location">📍 ${s.slot_location}</div>` : ''}
             </div>
-            <span class="slot-check">✓</span>
+            ${s.is_blocked ? '<span class="slot-blocked-label">⛔ 마감된 일정</span>' : '<span class="slot-check">✓</span>'}
           </div>
         </div>`).join('')}
     </div>
