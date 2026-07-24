@@ -4438,6 +4438,7 @@ let _schedAppId = null, _schedIsDispatch = false, _schedRound = 1;
 let _schedCalYear = null, _schedCalMonth = null;
 let _schedSelectedDates = new Set(); // 다중 날짜 선택
 let _schedSlots = [], _schedAvailability = [];
+let _schedBlockedTimes = new Map(); // 면접관 일정 충돌 시간대
 let _schedAppName = '', _schedJobTitle = '';
 
 async function openSchedulePanel(id, app, isDispatch) {
@@ -4495,12 +4496,61 @@ async function loadSchedulePanel() {
     allInterviewers = dIvs || [];
   } else {
     const app = allApps.find(a => a.id === _schedAppId);
-    allInterviewers = (window._jobInterviewers1st||[]).filter(i => i.job_id === app?.job_posting_id);
-    if (!allInterviewers.length && app?.job_posting_id) {
-      const { data: jIvs } = await sb.from('job_interviewers').select('admin_id, admin_profiles(name), job_id').eq('job_id', app.job_posting_id);
+    const ivTableName = _schedRound === 2 ? 'job_interviewers_2nd' : 'job_interviewers';
+    if (app?.job_posting_id) {
+      const { data: jIvs } = await sb.from(ivTableName).select('admin_id, admin_profiles(name), job_id').eq('job_id', app.job_posting_id);
       allInterviewers = jIvs || [];
     }
   }
+
+  // ── 면접관 일정 충돌 검사 ──────────────────────────────
+  // 이 지원자의 면접관들이 이미 다른 지원자와 확정된 시간대를 수집한다.
+  // 같은 사람이 A공고 1차 면접관 / B공고 2차 면접관일 수 있으므로 양쪽 다 확인.
+  _schedBlockedTimes = new Map(); // "YYYY-MM-DD|HH:MM:SS" -> "겹치는 사유 텍스트"
+  try {
+    const adminIds = [...new Set(allInterviewers.map(i => i.admin_id).filter(Boolean))];
+    if (adminIds.length) {
+      const [{ data: as1 }, { data: as2 }] = await Promise.all([
+        sb.from('job_interviewers').select('job_id').in('admin_id', adminIds),
+        sb.from('job_interviewers_2nd').select('job_id').in('admin_id', adminIds)
+      ]);
+      const jobIds1 = [...new Set((as1||[]).map(r => r.job_id))];
+      const jobIds2 = [...new Set((as2||[]).map(r => r.job_id))];
+      const allJobIds = [...new Set([...jobIds1, ...jobIds2])];
+
+      if (allJobIds.length) {
+        const { data: relApps } = await sb.from('applications')
+          .select('id, name, job_posting_id')
+          .in('job_posting_id', allJobIds)
+          .neq('id', _schedAppId);
+        const relAppIds = (relApps||[]).map(r => r.id);
+        const appMeta = {};
+        (relApps||[]).forEach(r => { appMeta[r.id] = r; });
+
+        if (relAppIds.length) {
+          const { data: confSels } = await sb.from('interview_selections')
+            .select('application_id, slot_id, interview_round, interview_slots(slot_date, slot_time, interview_round)')
+            .in('application_id', relAppIds)
+            .not('slot_id', 'is', null);
+
+          (confSels||[]).forEach(cs => {
+            const slot = cs.interview_slots;
+            if (!slot) return;
+            const meta = appMeta[cs.application_id];
+            if (!meta) return;
+            const theirRound = cs.interview_round || slot.interview_round || 1;
+            const isOurInterviewer = theirRound === 2
+              ? jobIds2.includes(meta.job_posting_id)
+              : jobIds1.includes(meta.job_posting_id);
+            if (isOurInterviewer) {
+              _schedBlockedTimes.set(`${slot.slot_date}|${slot.slot_time}`, `${meta.name} ${theirRound}차면접`);
+            }
+          });
+        }
+      }
+    }
+  } catch(e) { console.error('slot conflict check error', e); }
+
   // 면접관 OR 공고 담당자면 캘린더 표시
   const isInterviewer = allInterviewers.some(i => i.admin_id === myId);
   // 공고 담당자 여부 확인
@@ -4569,17 +4619,23 @@ async function loadSchedulePanel() {
       ${_schedSlots.filter(s=>!s.is_confirmed).length ? `
         <div style="margin-top:12px">
           <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px">미확정 슬롯 — 확정하면 지원자 발송 목록에 포함</div>
-          ${_schedSlots.filter(s=>!s.is_confirmed).map(s=>`
-            <div class="slot-card" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:4px">
+          ${_schedSlots.filter(s=>!s.is_confirmed).map(s=>{
+            const conflictWith = _schedBlockedTimes.get(`${s.slot_date}|${s.slot_time}`);
+            return `
+            <div class="slot-card" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:4px${conflictWith?';background:#FCEBEB;border-color:#A32D2D40':''}">
               <div>
                 <div class="slot-time" style="font-size:13px">${formatSlotDate(s.slot_date)} ${formatSlotTime(s.slot_time)}${s.slot_time_end?' ~ '+formatSlotTime(s.slot_time_end):''}</div>
                 ${s.slot_location?`<div class="slot-location">${s.slot_location}</div>`:''}
+                ${conflictWith?`<div style="font-size:11px;color:#A32D2D;font-weight:600;margin-top:2px">⛔ 면접관 일정 중복 (${conflictWith})</div>`:''}
               </div>
               <div style="display:flex;gap:4px">
-                <button class="btn btn-sm" onclick="confirmSlot('${s.id}')">확정</button>
+                ${conflictWith
+                  ? `<button class="btn btn-sm" disabled style="opacity:.4;cursor:not-allowed">확정 불가</button>`
+                  : `<button class="btn btn-sm" onclick="confirmSlot('${s.id}')">확정</button>`}
                 <button class="btn btn-sm btn-danger" onclick="removeSlot('${s.id}')">삭제</button>
               </div>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
         </div>` : ''}
     </div>` : '';
 
@@ -4777,10 +4833,33 @@ async function addSlotsByDate() {
     }
   });
   if (!rows.length) { showToast('추가할 슬롯이 없습니다'); return; }
-  const { error } = await sb.from('interview_slots').insert(rows);
+
+  // 면접관 일정이 이미 잡힌 시간대는 제외
+  // (_schedBlockedTimes의 키는 "YYYY-MM-DD|HH:MM:SS" 형식이므로 초 단위까지 맞춰서 비교)
+  const normalizeTime = t => t.length === 5 ? t + ':00' : t;
+  const conflicts = [];
+  const validRows = rows.filter(r => {
+    const key = `${r.slot_date}|${normalizeTime(r.slot_time)}`;
+    const who = _schedBlockedTimes.get(key);
+    if (who) { conflicts.push(`${formatSlotDate(r.slot_date)} ${formatSlotTime(r.slot_time)} (${who})`); return false; }
+    return true;
+  });
+
+  if (conflicts.length && !validRows.length) {
+    showToast(`⛔ 면접관 일정이 모두 중복되어 추가할 수 없습니다`);
+    alert('아래 시간대는 면접관이 이미 다른 면접에 배정되어 있어 추가할 수 없습니다.\n\n' + conflicts.join('\n'));
+    return;
+  }
+
+  const { error } = await sb.from('interview_slots').insert(validRows);
   if (error) { showToast('오류: '+error.message); return; }
   _schedSelectedDates.clear();
-  showToast(`✓ ${rows.length}개 슬롯 추가됨`);
+  if (conflicts.length) {
+    showToast(`✓ ${validRows.length}개 추가 (중복 ${conflicts.length}개 제외)`);
+    alert('아래 시간대는 면접관이 이미 다른 면접에 배정되어 있어 제외되었습니다.\n\n' + conflicts.join('\n'));
+  } else {
+    showToast(`✓ ${validRows.length}개 슬롯 추가됨`);
+  }
   await loadSchedulePanel();
 }
 
@@ -4836,6 +4915,16 @@ async function quickAddSlot(date) {
 }
 
 async function confirmSlot(slotId) {
+  // 확정 직전 재검사 (화면 상태가 오래됐을 수 있으므로 서버 데이터 기준으로 방어)
+  const slot = _schedSlots.find(s => s.id === slotId);
+  if (slot) {
+    const who = _schedBlockedTimes.get(`${slot.slot_date}|${slot.slot_time}`);
+    if (who) {
+      showToast('⛔ 면접관 일정이 중복되어 확정할 수 없습니다');
+      alert(`이 시간대는 면접관이 이미 다른 면접(${who})에 배정되어 있습니다.\n다른 시간을 선택해주세요.`);
+      return;
+    }
+  }
   await sb.from('interview_slots').update({ is_confirmed: true }).eq('id', slotId);
   showToast('✓ 후보 시간 확정');
   await loadSchedulePanel();
