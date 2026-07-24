@@ -384,6 +384,95 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
 .empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
 .empty-state .icon{font-size:40px;margin-bottom:12px}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gray200);border-radius:2px}
+
+/* ══════════════════════════════════════════════════════
+   모바일 대응 (768px 이하)
+   - 현장직군 면접관이 휴대폰으로 서류 검토 / 이력서 확인 / 합불 처리
+   - PC 스타일은 위에 그대로 두고, 여기서만 덮어씀
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── 레이아웃: 사이드바를 오버레이 서랍으로 ── */
+  .sidebar{width:250px;transform:translateX(-250px);box-shadow:2px 0 12px rgba(0,0,0,.15);z-index:200}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .sidebar.collapsed{transform:translateX(-250px)}
+  .app-wrap, .main{margin-left:0 !important}
+  .sb-toggle-btn{display:none !important}
+
+  /* 사이드바 열렸을 때 뒤 배경 딤 처리 */
+  .mobile-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;display:none}
+  .mobile-backdrop.show{display:block}
+
+  /* 모바일 전용 햄버거 버튼 (탑바 왼쪽) */
+  .mobile-menu-btn{display:flex !important;align-items:center;justify-content:center;background:none;border:none;font-size:20px;padding:4px 8px;cursor:pointer;color:var(--text);flex-shrink:0}
+
+  /* ── 탑바 / 콘텐츠 여백 축소 ── */
+  .topbar{padding:0 12px;height:48px;gap:8px;flex-wrap:nowrap;overflow-x:auto}
+  .topbar-title{font-size:14px;white-space:nowrap}
+  .content{padding:14px 12px}
+
+  /* 필터 셀렉트들이 탑바에서 넘칠 때 */
+  .filter-select{font-size:12px;padding:5px 8px;max-width:130px}
+
+  /* ── 홈: 카드들을 1열로 ── */
+  .stats-grid{grid-template-columns:1fr 1fr !important;gap:8px}
+  .home-job-list{grid-template-columns:1fr}
+  .home-job-row-name{font-size:16px}
+  .home-ministat{height:48px;padding:4px 6px}
+  .home-ministat-val{font-size:17px}
+  .home-ministat-label{font-size:10px}
+
+  /* ── 파이프라인 칸반: 가로 스크롤 ── */
+  .pipeline-wrap{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
+  .pipeline-col{min-width:240px}
+
+  /* ── 공고 카드 그리드 1열 ── */
+  .job-grid{grid-template-columns:1fr !important}
+
+  /* ── 지원자 상세 모달: 전체화면 ── */
+  .modal{width:100vw !important;max-width:100vw}
+  .modal-header{padding:14px 16px}
+  .modal-body{padding:16px}
+  .info-grid{grid-template-columns:1fr}
+  .profile-header{flex-direction:column;align-items:center;text-align:center;gap:10px}
+
+  /* 모바일에서 숨길 것: 워드 이력서 다운로드 */
+  .pc-only{display:none !important}
+
+  /* ── 면접 진행: 캘린더/리스트 세로 배치 ── */
+  .iv-room-layout{grid-template-columns:1fr;gap:14px}
+  .iv-room-left{position:static}
+  .iv-cal-grid{grid-auto-rows:64px}
+  .iv-cal-cell{height:64px;padding:3px}
+  .iv-cal-chip{font-size:8px}
+  .iv-room-card{padding:12px 14px;gap:10px;flex-wrap:wrap}
+  .iv-room-time{min-width:auto;font-size:13px}
+  .iv-room-status{margin-left:0;width:100%;text-align:center;margin-top:6px}
+  .iv-unscheduled-grid{grid-template-columns:1fr}
+
+  /* ── 면접 일정 관리 패널: 전체화면 ── */
+  .schedule-panel{width:100vw !important;flex-shrink:1}
+  .modal-overlay{flex-direction:column}
+
+  /* ── 통계: 차트 1열 (PC 전용이지만 깨지지는 않게) ── */
+  .chart-grid-2, .chart-grid-3{grid-template-columns:1fr !important}
+  .chart-grid-2 .chart-card, .chart-grid-3 .chart-card{height:280px}
+  .funnel-row{flex-direction:column;gap:4px}
+  .funnel-arrow{transform:rotate(90deg);padding:2px 0}
+
+  /* ── 테이블: 가로 스크롤 ── */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table{min-width:480px}
+
+  /* ── 터치 타겟 최소 크기 확보 ── */
+  .btn{padding:9px 14px;font-size:13px}
+  .btn-sm{padding:7px 12px;font-size:12px}
+  .sb-link{padding:12px 20px;font-size:14px}
+}
+
+/* PC에서는 햄버거 버튼 숨김 */
+.mobile-menu-btn{display:none}
+.mobile-backdrop{display:none}
 </style>
 </head>
 <body>
@@ -413,6 +502,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 <!-- 앱 -->
 <div id="viewApp" class="hidden">
   <div class="app">
+    <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileSidebar()"></div>
     <button class="sb-toggle-btn" id="sbToggleBtn" onclick="toggleSidebar()">◀</button>
     <aside class="sidebar" id="sidebar">
       <div class="sb-logo" style="font-family:'Pretendard',sans-serif;font-weight:600;font-size:14px;letter-spacing:-0.3px;cursor:pointer" onclick="showPage('home', document.getElementById('sbHome'))">엘앤티렉서스(주)</div>
@@ -691,7 +781,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
         <div style="font-size:12px;color:var(--text3)" id="mJobTitle">-</div>
       </div>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <button class="btn btn-sm" onclick="downloadResume()">📄 지원서</button>
+        <button class="btn btn-sm pc-only" onclick="downloadResume()">📄 지원서</button>
         <button class="modal-close" onclick="closeModal()">✕</button>
       </div>
     </div>
@@ -5037,6 +5127,61 @@ function toggleEJobPerms() {
 }
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// ══════════════════════════════════════════════════════
+// 모바일 대응
+// ══════════════════════════════════════════════════════
+function isMobile() { return window.innerWidth <= 768; }
+
+function openMobileSidebar() {
+  document.getElementById('sidebar')?.classList.add('mobile-open');
+  document.getElementById('mobileBackdrop')?.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar')?.classList.remove('mobile-open');
+  document.getElementById('mobileBackdrop')?.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function toggleMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (sb?.classList.contains('mobile-open')) closeMobileSidebar();
+  else openMobileSidebar();
+}
+
+// 모든 topbar에 햄버거 버튼을 자동으로 주입 (모바일에서만 보임)
+function injectMobileMenuButtons() {
+  document.querySelectorAll('.topbar').forEach(bar => {
+    if (bar.querySelector('.mobile-menu-btn')) return; // 이미 있으면 skip
+    const btn = document.createElement('button');
+    btn.className = 'mobile-menu-btn';
+    btn.innerHTML = '☰';
+    btn.setAttribute('aria-label', '메뉴');
+    btn.onclick = toggleMobileSidebar;
+    bar.insertBefore(btn, bar.firstChild);
+  });
+}
+
+// 사이드바 메뉴 클릭 시 모바일에서는 자동으로 닫기
+function setupMobileSidebarAutoClose() {
+  document.querySelectorAll('.sidebar .sb-link, .sidebar .sb-logo').forEach(el => {
+    el.addEventListener('click', () => { if (isMobile()) setTimeout(closeMobileSidebar, 100); });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  injectMobileMenuButtons();
+  setupMobileSidebarAutoClose();
+});
+
+// 이미 DOM이 로드된 후에 스크립트가 실행되는 경우 대비
+if (document.readyState !== 'loading') {
+  injectMobileMenuButtons();
+  setupMobileSidebarAutoClose();
+}
+
 </script>
 </body>
 </html>
