@@ -3867,18 +3867,20 @@ async function loadInterviewRoom() {
   if (!apps?.length) { c.innerHTML = '<div class="empty-state"><div class="icon">🎤</div><p>현재 면접 진행 중인 지원자가 없습니다</p></div>'; return; }
 
   // 각 지원자의 확정 면접 일정 로드
+  // 주의: "확정"은 지원자가 실제로 슬롯을 선택(interview_selections.slot_id)한 경우만 해당.
+  // interview_slots.is_confirmed는 "관리자가 후보로 제시함"을 의미할 뿐 확정이 아니므로
+  // fallback으로 사용하면 안 됨 (미선택 지원자가 확정된 것처럼 표시되는 버그 발생)
   const appIds = apps.map(a => a.id);
   const { data: selections } = await sb.from('interview_selections')
     .select('*, interview_slots(*)')
-    .in('application_id', appIds);
-  const { data: slots } = await sb.from('interview_slots')
-    .select('*').in('application_id', appIds).eq('is_confirmed', true);
+    .in('application_id', appIds)
+    .not('slot_id', 'is', null);
 
   // 날짜별 그룹핑
   const byDate = {};
   apps.forEach(app => {
     const sel = (selections||[]).find(s => s.application_id === app.id);
-    const slot = sel?.interview_slots || (slots||[]).find(s => s.application_id === app.id);
+    const slot = sel?.interview_slots || null;
     const date = slot?.slot_date || 'unscheduled';
     if (!byDate[date]) byDate[date] = [];
     byDate[date].push({ app, slot });
