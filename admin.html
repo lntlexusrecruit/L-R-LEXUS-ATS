@@ -2401,7 +2401,7 @@ function showPage(name, el, skipHistory) {
   }
   document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
   if (el) el.classList.add('active');
-  ['Home','Dashboard','Pipeline','Jobs','Candidates','Stats','Admins','Dispatch','DispatchDetail','DispatchAgencies','DispatchAdmins','Interviewroom','InterviewSession'].forEach(p=>
+  ['Home','Dashboard','Pipeline','Jobs','Candidates','Stats','Admins','Companyinfo','Dispatch','DispatchDetail','DispatchAgencies','DispatchAdmins','Interviewroom','InterviewSession'].forEach(p=>
     document.getElementById('page'+p)?.classList.toggle('hidden', p.toLowerCase()!==name.toLowerCase())
   );
   // 면접 세션 전용 모바일 탭 클래스는 다른 페이지로 나갈 때 정리
