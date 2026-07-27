@@ -430,22 +430,32 @@ async function loadLanding() {
     const by = {};
     (data || []).forEach(r => { by[r.section] = r; });
 
+    // 이미지가 있으면 이미지를, 없으면 텍스트를 표시하는 헬퍼
+    const applySection = (row, titleEl, contentEl, defaultTitle) => {
+      if (!row) return;
+      if (titleEl && row.title) document.getElementById(titleEl).textContent = row.title;
+      const cEl = document.getElementById(contentEl);
+      if (!cEl) return;
+      if (row.image_url) {
+        cEl.innerHTML = `<img src="${row.image_url}" alt="" style="width:100%;border-radius:12px;border:0.5px solid var(--border)">`;
+      } else {
+        cEl.textContent = row.content || '';
+      }
+    };
+
+    // 히어로(about): 이미지가 있으면 소개 영역에 이미지
     if (by.about) {
       document.getElementById('lpHeroTitle').textContent = by.about.title || '엘앤티렉서스(주)';
-      document.getElementById('lpAboutContent').textContent = by.about.content || '';
+      const heroC = document.getElementById('lpAboutContent');
+      if (by.about.image_url) {
+        heroC.innerHTML = `<img src="${by.about.image_url}" alt="" style="max-width:100%;border-radius:12px;margin-top:8px">`;
+      } else {
+        heroC.textContent = by.about.content || '';
+      }
     }
-    if (by.talent) {
-      if (by.talent.title) document.getElementById('lpTalentTitle').textContent = by.talent.title;
-      document.getElementById('lpTalentContent').textContent = by.talent.content || '';
-    }
-    if (by.vision) {
-      if (by.vision.title) document.getElementById('lpVisionTitle').textContent = by.vision.title;
-      document.getElementById('lpVisionContent').textContent = by.vision.content || '';
-    }
-    if (by.welfare) {
-      if (by.welfare.title) document.getElementById('lpWelfareTitle').textContent = by.welfare.title;
-      document.getElementById('lpWelfareContent').textContent = by.welfare.content || '';
-    }
+    applySection(by.talent,  'lpTalentTitle',  'lpTalentContent');
+    applySection(by.vision,  'lpVisionTitle',  'lpVisionContent');
+    applySection(by.welfare, 'lpWelfareTitle', 'lpWelfareContent');
   } catch(e) { console.log('회사 정보 로드 실패:', e); }
 
   // 공고 목록 로드

@@ -2227,37 +2227,98 @@ async function loadCompanyInfo() {
   const { data } = await sb.from('company_info').select('*');
   const bySection = {};
   (data || []).forEach(r => { bySection[r.section] = r; });
+  window._companyInfoCache = bySection;
 
   c.innerHTML = `
     <div style="font-size:13px;color:var(--text2);margin-bottom:20px">
-      아래 내용은 지원자용 채용 홈페이지에 표시됩니다. 수정 후 우측 상단 <strong>저장</strong> 버튼을 눌러주세요.<br>
-      줄바꿈은 그대로 반영되며, 항목 앞에 <strong>•</strong> 기호를 넣으면 목록처럼 보입니다.
+      아래 내용은 지원자용 채용 홈페이지에 표시됩니다.<br>
+      <strong>이미지를 올리면 이미지가 우선 표시</strong>되고, 이미지가 없으면 텍스트가 표시됩니다. 텍스트 수정 후에는 우측 상단 <strong>저장</strong>을 눌러주세요.
     </div>
     ${COMPANY_SECTIONS.map(s => {
       const row = bySection[s.key] || {};
+      const img = row.image_url || '';
       return `
-        <div class="field" style="margin-bottom:24px">
-          <label style="font-size:14px;font-weight:700;color:var(--text)">${s.label}</label>
+        <div class="field" style="margin-bottom:28px;padding-bottom:24px;border-bottom:0.5px solid var(--border)">
+          <label style="font-size:15px;font-weight:700;color:var(--text)">${s.label}</label>
+
+          <div style="margin-top:10px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">🖼️ 이미지</div>
+            <div id="ci_imgbox_${s.key}">
+              ${img
+                ? `<div style="position:relative;display:inline-block">
+                     <img src="${img}" style="max-width:100%;max-height:220px;border-radius:var(--rsm);border:0.5px solid var(--border)">
+                     <button class="btn btn-sm btn-danger" style="margin-top:8px;display:block" onclick="removeCompanyImage('${s.key}')">이미지 삭제</button>
+                   </div>`
+                : `<label style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:1px dashed var(--border2);border-radius:var(--rsm);cursor:pointer;font-size:13px;color:var(--text2)">
+                     + 이미지 업로드
+                     <input type="file" accept="image/*" style="display:none" onchange="uploadCompanyImage('${s.key}', this)">
+                   </label>`}
+            </div>
+          </div>
+
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">📝 텍스트 (이미지가 없을 때 표시)</div>
           <input type="text" id="ci_title_${s.key}" value="${(row.title||'').replace(/"/g,'&quot;')}"
                  placeholder="제목 (예: ${s.label})"
-                 style="width:100%;margin-top:6px;margin-bottom:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'Pretendard',sans-serif;font-size:14px">
+                 style="width:100%;margin-bottom:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'Pretendard',sans-serif;font-size:14px">
           <textarea id="ci_content_${s.key}" placeholder="${s.placeholder}"
-                    style="width:100%;min-height:140px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.6;resize:vertical">${row.content||''}</textarea>
+                    style="width:100%;min-height:110px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.6;resize:vertical">${row.content||''}</textarea>
         </div>`;
     }).join('')}
   `;
 }
 
+async function uploadCompanyImage(section, input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('이미지 파일만 업로드 가능합니다'); return; }
+  showToast('이미지 업로드 중...');
+
+  // 파일명: section + 타임스탬프 (캐시 방지 + 덮어쓰기 충돌 방지)
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${section}_${Date.now()}.${ext}`;
+
+  const { error: upErr } = await sb.storage.from('company-images').upload(path, file, { upsert: true });
+  if (upErr) { showToast('업로드 실패: ' + upErr.message); return; }
+
+  const { data: pub } = sb.storage.from('company-images').getPublicUrl(path);
+  const imageUrl = pub.publicUrl;
+
+  // DB에 URL 저장 (해당 섹션 행 upsert)
+  const cache = window._companyInfoCache?.[section] || {};
+  const { error: dbErr } = await sb.from('company_info').upsert({
+    section,
+    title: cache.title || null,
+    content: cache.content || null,
+    image_url: imageUrl,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'section' });
+  if (dbErr) { showToast('저장 실패: ' + dbErr.message); return; }
+
+  showToast('✓ 이미지가 업로드되었습니다');
+  loadCompanyInfo();
+}
+
+async function removeCompanyImage(section) {
+  if (!confirm('이 이미지를 삭제할까요? 삭제하면 텍스트가 표시됩니다.')) return;
+  const { error } = await sb.from('company_info').update({ image_url: null, updated_at: new Date().toISOString() }).eq('section', section);
+  if (error) { showToast('삭제 실패: ' + error.message); return; }
+  showToast('✓ 이미지가 삭제되었습니다');
+  loadCompanyInfo();
+}
+
 async function saveCompanyInfo() {
+  const cache = window._companyInfoCache || {};
   const rows = COMPANY_SECTIONS.map(s => ({
     section: s.key,
     title: document.getElementById('ci_title_' + s.key).value.trim(),
     content: document.getElementById('ci_content_' + s.key).value,
+    image_url: cache[s.key]?.image_url || null,  // 기존 이미지 URL 유지
     updated_at: new Date().toISOString(),
   }));
   const { error } = await sb.from('company_info').upsert(rows, { onConflict: 'section' });
   if (error) { showToast('저장 실패: ' + error.message); return; }
   showToast('✓ 회사 소개가 저장되었습니다');
+  loadCompanyInfo();
 }
 
 async function loadAdmins() {
