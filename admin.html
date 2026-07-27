@@ -556,6 +556,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
         <div id="superAdminMenu" class="hidden">
           <div class="sb-label" style="margin-top:8px">슈퍼어드민</div>
           <button class="sb-link" onclick="showPage('admins',this)">⊙ 관리자 관리</button>
+          <button class="sb-link" onclick="showPage('companyinfo',this)">🏢 회사 소개 관리</button>
         </div>
         <div class="sb-label" style="margin-top:8px">계정</div>
         <button class="sb-link" onclick="doLogout()">← 로그아웃</button>
@@ -776,6 +777,14 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
           <button class="btn btn-primary btn-sm" onclick="openAdminForm()">+ 관리자 추가</button>
         </div>
         <div class="content" id="adminsContent"><div class="loading"><div class="spinner"></div>불러오는 중...</div></div>
+      </div>
+      <!-- 회사 소개 관리 -->
+      <div id="pageCompanyinfo" class="hidden">
+        <div class="topbar">
+          <div class="topbar-title">🏢 회사 소개 관리</div>
+          <button class="btn btn-primary btn-sm" onclick="saveCompanyInfo()">💾 저장</button>
+        </div>
+        <div class="content" id="companyinfoContent"><div class="loading"><div class="spinner"></div>불러오는 중...</div></div>
       </div>
     </div>
   </div>
@@ -2204,6 +2213,53 @@ async function downloadResume() {
 }
 
 // ── 관리자 관리 ──────────────────────────────────────────
+// ── 회사 소개 관리 (슈퍼어드민) ──────────────────────────
+const COMPANY_SECTIONS = [
+  { key: 'about',   label: '회사 소개 (홈 첫 화면)', placeholder: '회사를 소개하는 내용을 입력하세요' },
+  { key: 'talent',  label: '인재상',                placeholder: '우리가 찾는 인재상을 입력하세요' },
+  { key: 'vision',  label: '비전 / 미션',           placeholder: '회사의 비전과 미션을 입력하세요' },
+  { key: 'welfare', label: '복리후생',              placeholder: '복리후생 내용을 입력하세요' },
+];
+
+async function loadCompanyInfo() {
+  const c = document.getElementById('companyinfoContent');
+  c.innerHTML = '<div class="loading"><div class="spinner"></div>불러오는 중...</div>';
+  const { data } = await sb.from('company_info').select('*');
+  const bySection = {};
+  (data || []).forEach(r => { bySection[r.section] = r; });
+
+  c.innerHTML = `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">
+      아래 내용은 지원자용 채용 홈페이지에 표시됩니다. 수정 후 우측 상단 <strong>저장</strong> 버튼을 눌러주세요.<br>
+      줄바꿈은 그대로 반영되며, 항목 앞에 <strong>•</strong> 기호를 넣으면 목록처럼 보입니다.
+    </div>
+    ${COMPANY_SECTIONS.map(s => {
+      const row = bySection[s.key] || {};
+      return `
+        <div class="field" style="margin-bottom:24px">
+          <label style="font-size:14px;font-weight:700;color:var(--text)">${s.label}</label>
+          <input type="text" id="ci_title_${s.key}" value="${(row.title||'').replace(/"/g,'&quot;')}"
+                 placeholder="제목 (예: ${s.label})"
+                 style="width:100%;margin-top:6px;margin-bottom:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'Pretendard',sans-serif;font-size:14px">
+          <textarea id="ci_content_${s.key}" placeholder="${s.placeholder}"
+                    style="width:100%;min-height:140px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.6;resize:vertical">${row.content||''}</textarea>
+        </div>`;
+    }).join('')}
+  `;
+}
+
+async function saveCompanyInfo() {
+  const rows = COMPANY_SECTIONS.map(s => ({
+    section: s.key,
+    title: document.getElementById('ci_title_' + s.key).value.trim(),
+    content: document.getElementById('ci_content_' + s.key).value,
+    updated_at: new Date().toISOString(),
+  }));
+  const { error } = await sb.from('company_info').upsert(rows, { onConflict: 'section' });
+  if (error) { showToast('저장 실패: ' + error.message); return; }
+  showToast('✓ 회사 소개가 저장되었습니다');
+}
+
 async function loadAdmins() {
   const {data}=await sb.from('admin_profiles').select('*').order('created_at');
   allAdmins=data||[];
@@ -2356,6 +2412,7 @@ function showPage(name, el, skipHistory) {
   if(name==='home') loadHome();
   if(name==='dashboard') loadDashboard();
   if(name==='admins') loadAdmins();
+  if(name==='companyinfo') loadCompanyInfo();
   if(name==='candidates') loadCandidates();
   if(name==='stats') loadStats();
   if(name==='dispatch') loadDispatchJobs();

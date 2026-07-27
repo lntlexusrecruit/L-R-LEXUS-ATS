@@ -133,6 +133,63 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 .page-sub { font-size:13px; color:var(--text3); }
 .error-msg { font-size:12px; color:var(--red-600); margin-top:4px; }
 .header-user { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text2); }
+
+/* ══════════════ 채용 랜딩 페이지 ══════════════ */
+.lp-nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:0 32px; height:60px; background:rgba(255,255,255,0.85); backdrop-filter:blur(10px); border-bottom:0.5px solid var(--border); }
+.lp-nav-logo { font-family:'DM Serif Display',serif; font-size:19px; color:var(--text); cursor:pointer; letter-spacing:0.01em; }
+.lp-nav-menu { display:flex; align-items:center; gap:4px; }
+.lp-nav-link { font-size:14px; color:var(--text2); background:none; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-family:'Pretendard',sans-serif; transition:all .15s; }
+.lp-nav-link:hover { background:var(--accent-bg); color:var(--accent); }
+
+.lp-hero { text-align:center; padding:100px 24px 90px; background:linear-gradient(180deg, var(--accent-bg) 0%, var(--bg) 100%); }
+.lp-hero-eyebrow { font-size:13px; font-weight:500; color:var(--accent); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:20px; }
+.lp-hero-title { font-family:'DM Serif Display',serif; font-size:clamp(34px, 6vw, 60px); line-height:1.15; color:var(--text); margin-bottom:20px; }
+.lp-hero-sub { font-size:16px; color:var(--text2); line-height:1.7; max-width:520px; margin:0 auto 36px; white-space:pre-line; }
+.lp-hero-cta { display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; font-size:15px; font-weight:500; padding:14px 32px; border-radius:30px; border:none; cursor:pointer; font-family:'Pretendard',sans-serif; transition:all .18s; box-shadow:0 4px 16px rgba(83,74,183,0.25); }
+.lp-hero-cta:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 8px 24px rgba(83,74,183,0.32); }
+
+.lp-section { max-width:840px; margin:0 auto; padding:72px 24px; scroll-margin-top:72px; }
+.lp-section-eyebrow { font-size:12px; font-weight:600; color:var(--accent); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px; text-align:center; }
+.lp-section-title { font-family:'DM Serif Display',serif; font-size:30px; color:var(--text); text-align:center; margin-bottom:32px; }
+.lp-section-body { font-size:15px; color:var(--text2); line-height:1.9; white-space:pre-line; }
+.lp-section.alt { background:var(--surface); max-width:none; }
+.lp-section.alt .lp-section-inner { max-width:840px; margin:0 auto; }
+.lp-card { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:32px; }
+
+/* 공고 목록 */
+.lp-jobs { max-width:840px; margin:0 auto; padding:72px 24px 100px; scroll-margin-top:72px; }
+.lp-job-card { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:24px; margin-bottom:14px; cursor:pointer; transition:all .16s; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.lp-job-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.06); }
+.lp-job-title { font-size:17px; font-weight:600; color:var(--text); margin-bottom:8px; }
+.lp-job-meta { font-size:13px; color:var(--text3); display:flex; gap:12px; flex-wrap:wrap; }
+.lp-job-arrow { font-size:13px; font-weight:500; color:var(--accent); white-space:nowrap; flex-shrink:0; }
+
+/* 공고 상세 */
+.lp-detail-wrap { max-width:920px; margin:0 auto; padding:40px 24px 100px; display:grid; grid-template-columns:1fr 280px; gap:32px; align-items:start; }
+.lp-detail-main { min-width:0; }
+.lp-detail-back { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text3); background:none; border:none; cursor:pointer; padding:0; margin-bottom:20px; font-family:'Pretendard',sans-serif; }
+.lp-detail-back:hover { color:var(--text); }
+.lp-detail-title { font-family:'DM Serif Display',serif; font-size:32px; color:var(--text); margin-bottom:14px; }
+.lp-detail-tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
+.lp-detail-tag { font-size:13px; color:var(--text2); background:var(--surface2); padding:6px 14px; border-radius:20px; }
+.lp-detail-block { margin-bottom:28px; }
+.lp-detail-block h3 { font-size:15px; font-weight:600; color:var(--text); margin-bottom:10px; padding-left:10px; border-left:3px solid var(--accent); }
+.lp-detail-block-body { font-size:14px; color:var(--text2); line-height:1.8; white-space:pre-line; }
+.lp-apply-box { position:sticky; top:80px; background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:24px; text-align:center; }
+.lp-apply-box-label { font-size:13px; color:var(--text3); margin-bottom:16px; }
+.lp-apply-btn { width:100%; background:var(--accent); color:#fff; font-size:15px; font-weight:500; padding:14px; border-radius:12px; border:none; cursor:pointer; font-family:'Pretendard',sans-serif; transition:all .16s; }
+.lp-apply-btn:hover { background:var(--accent-hover); }
+
+@media (max-width:768px) {
+  .lp-nav { padding:0 16px; height:54px; }
+  .lp-nav-menu { gap:0; }
+  .lp-nav-link { padding:8px 9px; font-size:13px; }
+  .lp-nav-logo { font-size:16px; }
+  .lp-hero { padding:64px 20px 56px; }
+  .lp-section, .lp-jobs { padding:48px 20px; }
+  .lp-detail-wrap { grid-template-columns:1fr; padding:24px 16px 80px; }
+  .lp-apply-box { position:static; }
+}
 </style>
 </head>
 <body>
@@ -154,7 +211,7 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
   <div class="loading-text" id="loadingText">처리 중입니다...</div>
 </div>
 
-<header class="header">
+<header class="header" id="mainHeader" style="display:none">
   <a class="header-logo" href="#">
     <div style="display:flex;align-items:center;"><span style="font-family:'DM Serif Display',serif;font-size:17px;font-weight:400;color:var(--text);letter-spacing:0.01em;">엘앤티렉서스(주)</span></div>
   </a>
@@ -166,8 +223,65 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 </header>
 
 
+<!-- 채용 랜딩 페이지 -->
+<div id="viewLanding">
+  <nav class="lp-nav">
+    <div class="lp-nav-logo" onclick="lpScrollTo('lpHero')">엘앤티렉서스(주)</div>
+    <div class="lp-nav-menu">
+      <button class="lp-nav-link" onclick="lpScrollTo('lpTalent')">인재상</button>
+      <button class="lp-nav-link" onclick="lpScrollTo('lpVision')">비전/미션</button>
+      <button class="lp-nav-link" onclick="lpScrollTo('lpWelfare')">복리후생</button>
+      <button class="lp-nav-link" onclick="lpScrollTo('lpJobs')" style="color:var(--accent);font-weight:500">채용공고</button>
+    </div>
+  </nav>
+
+  <section class="lp-hero" id="lpHero">
+    <div class="lp-hero-eyebrow">RECRUIT</div>
+    <h1 class="lp-hero-title" id="lpHeroTitle">함께 성장할<br>동료를 찾습니다</h1>
+    <div class="lp-hero-sub" id="lpAboutContent">불러오는 중...</div>
+    <button class="lp-hero-cta" onclick="lpScrollTo('lpJobs')">채용 공고 보기 →</button>
+  </section>
+
+  <section class="lp-section" id="lpTalent">
+    <div class="lp-section-eyebrow">TALENT</div>
+    <h2 class="lp-section-title" id="lpTalentTitle">인재상</h2>
+    <div class="lp-card"><div class="lp-section-body" id="lpTalentContent">불러오는 중...</div></div>
+  </section>
+
+  <section class="lp-section alt" id="lpVision">
+    <div class="lp-section-inner">
+      <div class="lp-section-eyebrow">VISION & MISSION</div>
+      <h2 class="lp-section-title" id="lpVisionTitle">비전 & 미션</h2>
+      <div class="lp-section-body" id="lpVisionContent" style="text-align:center">불러오는 중...</div>
+    </div>
+  </section>
+
+  <section class="lp-section" id="lpWelfare">
+    <div class="lp-section-eyebrow">WELFARE</div>
+    <h2 class="lp-section-title" id="lpWelfareTitle">복리후생</h2>
+    <div class="lp-card"><div class="lp-section-body" id="lpWelfareContent">불러오는 중...</div></div>
+  </section>
+
+  <section class="lp-jobs" id="lpJobs">
+    <div class="lp-section-eyebrow">POSITIONS</div>
+    <h2 class="lp-section-title">현재 채용 중인 직무</h2>
+    <div id="lpJobList"><div class="loading"><div class="spinner"></div>공고 불러오는 중...</div></div>
+  </section>
+</div>
+
+<!-- 공고 상세 -->
+<div id="viewJobDetail" class="hidden">
+  <nav class="lp-nav">
+    <div class="lp-nav-logo" onclick="lpGoHome()">엘앤티렉서스(주)</div>
+    <div class="lp-nav-menu">
+      <button class="lp-nav-link" onclick="lpGoHome()">← 채용 홈으로</button>
+    </div>
+  </nav>
+  <div class="lp-detail-wrap" id="lpDetailWrap"></div>
+</div>
+
 <!-- 공고 선택 화면 -->
-<div id="viewJobSelect">
+<div id="viewJobSelect" class="hidden">
   <div class="layout" style="max-width:600px;margin:0 auto;padding:40px 20px 100px;">
     <div style="text-align:center;margin-bottom:32px;">
       <div style="font-size:22px;font-weight:600;margin-bottom:6px;">채용 공고</div>
@@ -302,6 +416,109 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 
 <script>
 
+// ── 채용 랜딩 페이지 ──────────────────────────────────────
+let _lpJobs = [];
+
+function lpScrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function loadLanding() {
+  // 회사 소개 정보 로드
+  try {
+    const { data } = await sb.from('company_info').select('*');
+    const by = {};
+    (data || []).forEach(r => { by[r.section] = r; });
+
+    if (by.about) {
+      document.getElementById('lpHeroTitle').textContent = by.about.title || '엘앤티렉서스(주)';
+      document.getElementById('lpAboutContent').textContent = by.about.content || '';
+    }
+    if (by.talent) {
+      if (by.talent.title) document.getElementById('lpTalentTitle').textContent = by.talent.title;
+      document.getElementById('lpTalentContent').textContent = by.talent.content || '';
+    }
+    if (by.vision) {
+      if (by.vision.title) document.getElementById('lpVisionTitle').textContent = by.vision.title;
+      document.getElementById('lpVisionContent').textContent = by.vision.content || '';
+    }
+    if (by.welfare) {
+      if (by.welfare.title) document.getElementById('lpWelfareTitle').textContent = by.welfare.title;
+      document.getElementById('lpWelfareContent').textContent = by.welfare.content || '';
+    }
+  } catch(e) { console.log('회사 정보 로드 실패:', e); }
+
+  // 공고 목록 로드
+  const list = document.getElementById('lpJobList');
+  const { data: jobs, error } = await sb.from('job_postings').select('*').eq('is_active', true).order('created_at', { ascending: false });
+  if (error || !jobs || !jobs.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">현재 모집 중인 공고가 없습니다.</div>';
+    return;
+  }
+  _lpJobs = jobs;
+  list.innerHTML = jobs.map(j => `
+    <div class="lp-job-card" onclick="showJobDetail('${j.id}')">
+      <div style="min-width:0">
+        <div class="lp-job-title">${j.title}</div>
+        <div class="lp-job-meta">
+          ${j.department?`<span>🏢 ${j.department}</span>`:''}
+          ${j.location?`<span>📍 ${j.location}</span>`:''}
+          ${j.employment_type?`<span>💼 ${j.employment_type}</span>`:''}
+        </div>
+      </div>
+      <span class="lp-job-arrow">자세히 보기 →</span>
+    </div>
+  `).join('');
+}
+
+function showJobDetail(id) {
+  const j = _lpJobs.find(x => x.id === id);
+  if (!j) return;
+  document.getElementById('lpDetailWrap').innerHTML = `
+    <div class="lp-detail-main">
+      <button class="lp-detail-back" onclick="lpGoHome()">← 채용 홈으로</button>
+      <h1 class="lp-detail-title">${j.title}</h1>
+      <div class="lp-detail-tags">
+        ${j.department?`<span class="lp-detail-tag">🏢 ${j.department}</span>`:''}
+        ${j.location?`<span class="lp-detail-tag">📍 ${j.location}</span>`:''}
+        ${j.employment_type?`<span class="lp-detail-tag">💼 ${j.employment_type}</span>`:''}
+      </div>
+      ${j.description?`<div class="lp-detail-block"><h3>직무 소개</h3><div class="lp-detail-block-body">${escapeHtml(j.description)}</div></div>`:''}
+      ${j.requirements?`<div class="lp-detail-block"><h3>자격 요건</h3><div class="lp-detail-block-body">${escapeHtml(j.requirements)}</div></div>`:''}
+    </div>
+    <div class="lp-apply-box">
+      <div class="lp-apply-box-label">이 공고에 지원하시겠어요?</div>
+      <button class="lp-apply-btn" onclick="applyToJob('${j.id}','${j.title.replace(/'/g,"\\'")}','${(j.department||'').replace(/'/g,"\\'")}','${(j.employment_type||'').replace(/'/g,"\\'")}')">지원하기 →</button>
+    </div>
+  `;
+  document.getElementById('viewLanding').classList.add('hidden');
+  document.getElementById('viewJobDetail').classList.remove('hidden');
+  window.scrollTo({ top: 0 });
+}
+
+function escapeHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function lpGoHome() {
+  document.getElementById('viewJobDetail').classList.add('hidden');
+  document.getElementById('viewJobSelect').classList.add('hidden');
+  document.getElementById('viewAuth').classList.add('hidden');
+  document.getElementById('viewLanding').classList.remove('hidden');
+  window.scrollTo({ top: 0 });
+}
+
+// 공고 상세에서 "지원하기" → 기존 로그인/지원 흐름으로 연결
+function applyToJob(id, title, dept, type) {
+  jobPostingId = id;
+  jobTitle = title;
+  document.getElementById('jobBadge').textContent = title;
+  document.getElementById('viewJobDetail').classList.add('hidden');
+  document.getElementById('viewLanding').classList.add('hidden');
+  document.getElementById('mainHeader').style.display = '';
+  document.getElementById('viewAuth').classList.remove('hidden');
+}
+
 // ── 공고 선택 ─────────────────────────────────────────────
 async function loadJobSelectPage() {
   const list = document.getElementById('jobSelectList');
@@ -332,6 +549,9 @@ function goToLogin() {
   // 인증 화면 숨기고 로그인 탭으로
   document.getElementById('viewVerify').classList.add('hidden');
   document.getElementById('viewJobSelect').classList.add('hidden');
+  document.getElementById('viewLanding').classList.add('hidden');
+  document.getElementById('viewJobDetail').classList.add('hidden');
+  document.getElementById('mainHeader').style.display = '';
   document.getElementById('viewAuth').classList.remove('hidden');
   // 로그인 탭 활성화
   const loginTab = document.querySelector('.auth-tab[onclick*="login"]');
@@ -353,11 +573,11 @@ async function resendVerify() {
 
 function goBackToJobs() {
   document.getElementById('viewAuth').classList.add('hidden');
-  document.getElementById('viewJobSelect').classList.remove('hidden');
+  document.getElementById('mainHeader').style.display = 'none';
   jobPostingId = null;
   jobTitle = '';
   document.getElementById('jobBadge').textContent = '채용 공고 로딩 중...';
-  loadJobSelectPage();
+  lpGoHome();
 }
 
 function selectJob(id, title, dept, type) {
@@ -385,26 +605,13 @@ const fd = {
 
 // ── 초기화 ───────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  await loadJobSelectPage();
-  // 공고 정보 로드
-  try {
-    let q = sb.from('job_postings').select('id,title').eq('is_active',true);
-    if (JOB_POSTING_ID) q = q.eq('id', JOB_POSTING_ID);
-    const { data } = await q.limit(1).single();
-    if (data) {
-      jobPostingId = data.id;
-      jobTitle = data.title;
-      document.getElementById('jobBadge').textContent = data.title;
-    }
-  } catch(e) {
-    document.getElementById('jobBadge').textContent = '지원서 작성';
-  }
+  await loadLanding();
 
   // 로그인 세션 확인
   const { data:{ session } } = await sb.auth.getSession();
   if (session) {
     currentUser = session.user;
-    // 세션 있어도 공고 먼저 선택하도록 showForm() 제거
+    // 세션이 있어도 랜딩 페이지를 먼저 보여줌 (공고 선택 후 지원)
   }
 
   // Auth 상태 변화 감지
