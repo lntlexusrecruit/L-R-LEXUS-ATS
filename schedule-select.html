@@ -178,6 +178,23 @@ async function sendInterviewerEmails(recipients, applicantName, jobTitle, round,
       });
     }
   } catch(e) { console.log('알림 발송 실패:', e); }
+
+  // 잔디 발송 (같은 대상에게)
+  try {
+    const emails = (recipients || []).map(r => r.email).filter(Boolean);
+    if (emails.length) {
+      await fetch(`${SUPABASE_URL}/functions/v1/send-jandi`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY, 'apikey': SUPABASE_KEY },
+        body: JSON.stringify({
+          emails,
+          body: `📅 면접 일정이 확정되었습니다`,
+          connectColor: '#534AB7',
+          info: [{ title: `${jobTitle||''} - ${applicantName}님 (${round}차 면접)`, description: `${dateStr} ${timeStr}` }]
+        })
+      });
+    }
+  } catch(e) { console.log('잔디 발송 실패:', e); }
 }
 
 async function confirmSelection() {

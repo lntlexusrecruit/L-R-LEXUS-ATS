@@ -3803,26 +3803,50 @@ const EMAILJS_TEMPLATE_INTERVIEW = 'template_ju4wzpu'; // 면접 확정
 
 if (window.emailjs) emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 
+// 잔디(JANDI) 개인 알림 발송 헬퍼
+const SEND_JANDI_URL = 'https://hslykriyfmnhbwzcocjs.supabase.co/functions/v1/send-jandi';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHlrcml5Zm1uaGJ3emNvY2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODIzMDQsImV4cCI6MjA5MzU1ODMwNH0.Ez5r-NSkQDvUmYjowHjMHeP_5BeqPxg59DxTrcKgKss';
+
+async function sendJandi(emails, body, info) {
+  try {
+    if (!emails || !emails.length) return;
+    await fetch(SEND_JANDI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ emails, body, connectColor: '#534AB7', info: info || [] })
+    });
+  } catch(e) { console.log('잔디 발송 실패:', e); }
+}
+
 // 검토 요청 알림 (관리자검토 단계 이동 시)
 async function notifyReviewRequired(jobId, applicantName, jobTitle) {
   try {
-    // 이 공고에 배정된 manager + 면접관 전체 조회
-    const [{ data: perms }, { data: ivs }] = await Promise.all([
+    // 이 공고에 배정된 manager + 1차/2차 면접관 전체 조회
+    const [{ data: perms }, { data: ivs1 }, { data: ivs2 }] = await Promise.all([
       sb.from('admin_job_permissions').select('admin_id, admin_profiles(name, email)').eq('job_posting_id', jobId),
-      sb.from('job_interviewers').select('admin_id, admin_profiles(name, email)').eq('job_id', jobId)
+      sb.from('job_interviewers').select('admin_id, admin_profiles(name, email)').eq('job_id', jobId),
+      sb.from('job_interviewers_2nd').select('admin_id, admin_profiles(name, email)').eq('job_id', jobId)
     ]);
     const recipients = new Map();
-    [...(perms||[]), ...(ivs||[])].forEach(p => {
+    [...(perms||[]), ...(ivs1||[]), ...(ivs2||[])].forEach(p => {
       if (p.admin_profiles?.email) recipients.set(p.admin_profiles.email, p.admin_profiles.name);
     });
     if (!recipients.size) return;
 
+    // 이메일 발송
     for (const [email, name] of recipients) {
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_REVIEW, {
         email, to_name: name || '담당자',
         applicant_name: applicantName, job_title: jobTitle || ''
       });
     }
+
+    // 잔디 발송 (같은 대상에게)
+    sendJandi(
+      [...recipients.keys()],
+      `📋 서류 검토가 필요한 지원자가 있습니다`,
+      [{ title: `${jobTitle||''} - ${applicantName}님`, description: '관리자 페이지에서 서류를 검토해 주세요.' }]
+    );
   } catch(e) { console.log('알림 발송 실패:', e); }
 }
 
