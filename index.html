@@ -226,7 +226,7 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 <!-- 채용 랜딩 페이지 -->
 <div id="viewLanding">
   <nav class="lp-nav">
-    <div class="lp-nav-logo" onclick="lpScrollTo('lpHero')">엘앤티렉서스(주)</div>
+    <div class="lp-nav-logo" id="lpNavLogo" onclick="lpScrollTo('lpHero')">엘앤티렉서스(주)</div>
     <div class="lp-nav-menu">
       <button class="lp-nav-link" onclick="lpScrollTo('lpTalent')">인재상</button>
       <button class="lp-nav-link" onclick="lpScrollTo('lpVision')">비전/미션</button>
@@ -236,7 +236,7 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
   </nav>
 
   <section class="lp-hero" id="lpHero">
-    <div class="lp-hero-eyebrow">RECRUIT</div>
+    <div class="lp-hero-eyebrow" id="lpHeroEyebrow">RECRUIT</div>
     <h1 class="lp-hero-title" id="lpHeroTitle">함께 성장할<br>동료를 찾습니다</h1>
     <div class="lp-hero-sub" id="lpAboutContent">불러오는 중...</div>
     <button class="lp-hero-cta" onclick="lpScrollTo('lpJobs')">채용 공고 보기 →</button>
@@ -272,7 +272,7 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 <!-- 공고 상세 -->
 <div id="viewJobDetail" class="hidden">
   <nav class="lp-nav">
-    <div class="lp-nav-logo" onclick="lpGoHome()">엘앤티렉서스(주)</div>
+    <div class="lp-nav-logo" id="lpNavLogo2" onclick="lpGoHome()">엘앤티렉서스(주)</div>
     <div class="lp-nav-menu">
       <button class="lp-nav-link" onclick="lpGoHome()">← 채용 홈으로</button>
     </div>
@@ -443,13 +443,24 @@ async function loadLanding() {
       }
     };
 
-    // 히어로(about): 이미지가 있으면 소개 영역에 이미지
+    // 로고: 이미지가 있으면 상단 내비에 로고 이미지 표시
+    if (by.logo && by.logo.image_url) {
+      const logoHtml = `<img src="${by.logo.image_url}" alt="회사 로고" style="max-height:34px;max-width:200px;display:block">`;
+      const l1 = document.getElementById('lpNavLogo');
+      const l2 = document.getElementById('lpNavLogo2');
+      if (l1) l1.innerHTML = logoHtml;
+      if (l2) l2.innerHTML = logoHtml;
+    }
+
+    // 히어로(about): 이미지가 있으면 이미지만 표시(제목/라벨 숨김)
     if (by.about) {
-      document.getElementById('lpHeroTitle').textContent = by.about.title || '엘앤티렉서스(주)';
       const heroC = document.getElementById('lpAboutContent');
       if (by.about.image_url) {
+        document.getElementById('lpHeroTitle').style.display = 'none';
+        document.getElementById('lpHeroEyebrow').style.display = 'none';
         heroC.innerHTML = `<img src="${by.about.image_url}" alt="" style="max-width:100%;border-radius:12px;margin-top:8px">`;
       } else {
+        document.getElementById('lpHeroTitle').textContent = by.about.title || '엘앤티렉서스(주)';
         heroC.textContent = by.about.content || '';
       }
     }

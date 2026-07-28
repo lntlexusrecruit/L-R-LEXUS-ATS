@@ -2229,11 +2229,31 @@ async function loadCompanyInfo() {
   (data || []).forEach(r => { bySection[r.section] = r; });
   window._companyInfoCache = bySection;
 
+  const logoRow = bySection['logo'] || {};
+  const logoImg = logoRow.image_url || '';
+
   c.innerHTML = `
     <div style="font-size:13px;color:var(--text2);margin-bottom:20px">
       아래 내용은 지원자용 채용 홈페이지에 표시됩니다.<br>
       <strong>이미지를 올리면 이미지가 우선 표시</strong>되고, 이미지가 없으면 텍스트가 표시됩니다. 텍스트 수정 후에는 우측 상단 <strong>저장</strong>을 눌러주세요.
     </div>
+
+    <div class="field" style="margin-bottom:28px;padding-bottom:24px;border-bottom:0.5px solid var(--border)">
+      <label style="font-size:15px;font-weight:700;color:var(--text)">🏷️ 회사 로고 (홈페이지 왼쪽 상단)</label>
+      <div style="font-size:12px;color:var(--text2);margin:6px 0 10px">로고를 올리면 상단에 로고가 표시되고, 없으면 회사명 텍스트가 표시됩니다. (배경이 투명하거나 흰색인 이미지를 권장)</div>
+      <div id="ci_imgbox_logo">
+        ${logoImg
+          ? `<div style="display:inline-block;background:#fff;padding:10px 16px;border-radius:var(--rsm);border:0.5px solid var(--border)">
+               <img src="${logoImg}" style="max-height:44px;max-width:240px;display:block">
+             </div>
+             <button class="btn btn-sm btn-danger" style="margin-top:8px;display:block" onclick="removeCompanyImage('logo')">로고 삭제</button>`
+          : `<label style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:1px dashed var(--border2);border-radius:var(--rsm);cursor:pointer;font-size:13px;color:var(--text2)">
+               + 로고 업로드
+               <input type="file" accept="image/*" style="display:none" onchange="uploadCompanyImage('logo', this)">
+             </label>`}
+      </div>
+    </div>
+
     ${COMPANY_SECTIONS.map(s => {
       const row = bySection[s.key] || {};
       const img = row.image_url || '';
