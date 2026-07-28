@@ -148,16 +148,16 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 .lp-hero-cta { display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; font-size:15px; font-weight:500; padding:14px 32px; border-radius:30px; border:none; cursor:pointer; font-family:'Pretendard',sans-serif; transition:all .18s; box-shadow:0 4px 16px rgba(83,74,183,0.25); }
 .lp-hero-cta:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 8px 24px rgba(83,74,183,0.32); }
 
-.lp-section { max-width:840px; margin:0 auto; padding:72px 24px; scroll-margin-top:72px; }
+.lp-section { max-width:1100px; margin:0 auto; padding:72px 40px; scroll-margin-top:72px; }
 .lp-section-eyebrow { font-size:12px; font-weight:600; color:var(--accent); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px; text-align:center; }
 .lp-section-title { font-family:'DM Serif Display',serif; font-size:30px; color:var(--text); text-align:center; margin-bottom:32px; }
 .lp-section-body { font-size:15px; color:var(--text2); line-height:1.9; white-space:pre-line; }
 .lp-section.alt { background:var(--surface); max-width:none; }
-.lp-section.alt .lp-section-inner { max-width:840px; margin:0 auto; }
+.lp-section.alt .lp-section-inner { max-width:1100px; margin:0 auto; }
 .lp-card { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:32px; }
 
 /* 공고 목록 */
-.lp-jobs { max-width:840px; margin:0 auto; padding:72px 24px 100px; scroll-margin-top:72px; }
+.lp-jobs { max-width:940px; margin:0 auto; padding:72px 24px 100px; scroll-margin-top:72px; }
 .lp-job-card { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:24px; margin-bottom:14px; cursor:pointer; transition:all .16s; display:flex; align-items:center; justify-content:space-between; gap:16px; }
 .lp-job-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.06); }
 .lp-job-title { font-size:17px; font-weight:600; color:var(--text); margin-bottom:8px; }
@@ -515,6 +515,7 @@ function showJobDetail(id) {
   document.getElementById('viewLanding').classList.add('hidden');
   document.getElementById('viewJobDetail').classList.remove('hidden');
   window.scrollTo({ top: 0 });
+  if (!window._lpSuppressHistory) history.pushState({ view: 'jobDetail', id }, '', '#job-' + id);
 }
 
 function escapeHtml(s) {
@@ -525,8 +526,10 @@ function lpGoHome() {
   document.getElementById('viewJobDetail').classList.add('hidden');
   document.getElementById('viewJobSelect').classList.add('hidden');
   document.getElementById('viewAuth').classList.add('hidden');
+  document.getElementById('mainHeader').style.display = 'none';
   document.getElementById('viewLanding').classList.remove('hidden');
   window.scrollTo({ top: 0 });
+  if (!window._lpSuppressHistory) history.pushState({ view: 'home' }, '', location.pathname);
 }
 
 // 공고 상세에서 "지원하기" → 기존 로그인/지원 흐름으로 연결
@@ -538,7 +541,30 @@ function applyToJob(id, title, dept, type) {
   document.getElementById('viewLanding').classList.add('hidden');
   document.getElementById('mainHeader').style.display = '';
   document.getElementById('viewAuth').classList.remove('hidden');
+  window.scrollTo({ top: 0 });
+  if (!window._lpSuppressHistory) history.pushState({ view: 'auth', id }, '', '#apply-' + id);
 }
+
+// 브라우저 뒤로/앞으로 가기 처리
+window.addEventListener('popstate', (e) => {
+  const view = e.state?.view;
+  window._lpSuppressHistory = true;  // popstate로 인한 전환은 히스토리를 다시 쌓지 않음
+  try {
+    if (view === 'jobDetail' && e.state?.id) {
+      // 지원화면 등에서 뒤로 → 공고상세로
+      document.getElementById('viewAuth')?.classList.add('hidden');
+      document.getElementById('mainHeader').style.display = 'none';
+      showJobDetail(e.state.id);
+    } else {
+      // 그 외(맨 처음)는 랜딩 홈으로
+      document.getElementById('viewAuth')?.classList.add('hidden');
+      document.getElementById('mainHeader').style.display = 'none';
+      lpGoHome();
+    }
+  } finally {
+    window._lpSuppressHistory = false;
+  }
+});
 
 // ── 공고 선택 ─────────────────────────────────────────────
 async function loadJobSelectPage() {
@@ -627,6 +653,7 @@ const fd = {
 // ── 초기화 ───────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   await loadLanding();
+  history.replaceState({ view: 'home' }, '', location.pathname);
 
   // 로그인 세션 확인
   const { data:{ session } } = await sb.auth.getSession();
