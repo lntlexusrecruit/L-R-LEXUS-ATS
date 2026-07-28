@@ -3810,9 +3810,11 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 async function sendJandi(emails, body, info) {
   try {
     if (!emails || !emails.length) return;
+    const { data: _s } = await sb.auth.getSession();
+    const callerToken = _s?.session?.access_token || '';
     await fetch(SEND_JANDI_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY, 'x-caller-token': callerToken },
       body: JSON.stringify({ emails, body, connectColor: '#534AB7', info: info || [] })
     });
   } catch(e) { console.log('잔디 발송 실패:', e); }
