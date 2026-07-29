@@ -954,10 +954,12 @@ function idleTickFn() {
     badge.style.background = remain <= WARN_BEFORE ? '#FDECEC' : 'rgba(255,255,255,0.92)';
     badge.style.color = remain <= WARN_BEFORE ? '#C0392B' : 'var(--text2)';
   }
-  // 2분 전 → 연장 팝업
+  // 2분 전 → 연장 팝업. 팝업 뜨는 순간부터 정확히 WARN_BEFORE(2분) 카운트다운을 새로 부여.
   if (remain <= WARN_BEFORE && !_warnShown) {
     _warnShown = true;
+    _idleDeadline = Date.now() + WARN_BEFORE; // 팝업 뜬 시점부터 2분 확보
     showExtendModal();
+    return; // 이번 tick은 여기서 종료 (아래 만료 체크가 옛 remain으로 오작동하지 않도록)
   }
   // 시간 만료 → 로그아웃
   if (remain <= 0) {
