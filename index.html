@@ -771,19 +771,27 @@ async function doSignup() {
   });
   hideLoading();
   if(error){showErr(err, error.message==='User already registered'?'이미 가입된 이메일입니다':error.message);return;}
+
+  // Confirm email이 켜져 있으면 signUp 응답에 session이 없다 → 인증 안내 화면으로
+  if (!data.session) {
+    window._pendingEmail = email;
+    document.getElementById('verifyEmailAddr').textContent = email;
+    hideAllViews();
+    document.getElementById('viewVerify').classList.remove('hidden');
+    document.getElementById('mainHeader').style.display = 'none';
+    window.scrollTo({top:0});
+    return;
+  }
+
+  // (Confirm email이 꺼진 설정인 경우) 세션이 바로 발급됨 → 기존 흐름
   currentUser = data.user;
   fd.basic.name = name;
   fd.basic.email = email;
-  // applicant_profiles 생성
   await sb.from('applicant_profiles').upsert({ id: currentUser.id, email, name });
-  // 이메일 인증 없이 바로 로그인 처리
-  if (!currentUser || !currentUser.email_confirmed_at) {
-    // 바로 로그인 시도
-    const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: pw });
-    if (!loginErr && loginData.user) currentUser = loginData.user;
-  }
   afterAuth();
 }
+
+// 로그인 화면으로 이동 (goToLogin은 위에 기존 함수 사용)
 
 async function doLogin() {
   const email=g('loginEmail'), pw=g('loginPw');
@@ -793,10 +801,25 @@ async function doLogin() {
   showLoading('로그인 중...');
   const {data, error} = await sb.auth.signInWithPassword({email, password:pw});
   hideLoading();
-  if(error){showErr(err,'이메일 또는 비밀번호가 올바르지 않습니다');return;}
+  if(error){
+    // 이메일 미인증 시 안내
+    if (/confirm|verified|not confirmed/i.test(error.message)) {
+      window._pendingEmail = email;
+      showErr(err, '아직 이메일 인증이 완료되지 않았습니다. 메일함의 인증 링크를 확인해 주세요.');
+    } else {
+      showErr(err,'이메일 또는 비밀번호가 올바르지 않습니다');
+    }
+    return;
+  }
   currentUser = data.user;
   fd.basic.email = email;
-  
+  // 인증 후 첫 로그인일 수 있으니 applicant_profiles 보장
+  try {
+    await sb.from('applicant_profiles').upsert({
+      id: currentUser.id, email,
+      name: currentUser.user_metadata?.name || ''
+    });
+  } catch(e){}
   afterAuth();
 }
 
