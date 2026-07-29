@@ -222,6 +222,13 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
   </div>
 </header>
 
+<!-- 로그인 시 어디서든 보이는 고정 로그아웃 버튼 -->
+<div id="floatingLogout" style="display:none;position:fixed;top:14px;right:16px;z-index:300;align-items:center;gap:8px;">
+  <span id="floatingName" style="font-size:12px;color:var(--text2);background:rgba(255,255,255,0.9);padding:5px 10px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);"></span>
+  <button onclick="showMyApplications()" style="padding:6px 14px;font-size:12px;font-weight:500;border:none;border-radius:20px;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.12);">내 지원 현황</button>
+  <button onclick="logout()" style="padding:6px 14px;font-size:12px;font-weight:500;border:none;border-radius:20px;background:var(--text);color:#fff;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.12);">로그아웃</button>
+</div>
+
 
 <!-- 채용 랜딩 페이지 -->
 <div id="viewLanding">
@@ -316,6 +323,32 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
   </div>
 </div>
 
+<!-- 내 지원 현황 -->
+<div id="viewMyApplications" class="hidden">
+  <nav class="lp-nav">
+    <div class="lp-nav-logo" id="lpNavLogo3" onclick="lpGoHome()">엘앤티렉서스(주)</div>
+    <div class="lp-nav-menu">
+      <button class="lp-nav-link" onclick="lpGoHome()">채용 홈</button>
+    </div>
+  </nav>
+  <div style="max-width:900px;margin:0 auto;padding:48px 24px 100px;">
+    <div style="font-family:'DM Serif Display',serif;font-size:32px;color:var(--text);margin-bottom:6px;">내 지원 현황</div>
+    <div id="myAppGreeting" style="font-size:14px;color:var(--text2);margin-bottom:32px;"></div>
+
+    <!-- 작성 중(임시저장) -->
+    <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:0.05em;margin-bottom:12px;">✍️ 작성 중인 지원서</div>
+    <div id="myDraftList" style="margin-bottom:40px;"><div style="color:var(--text3);font-size:14px;padding:20px;text-align:center;">불러오는 중...</div></div>
+
+    <!-- 지원 완료 -->
+    <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:0.05em;margin-bottom:12px;">📋 지원 완료</div>
+    <div id="mySubmittedList"><div style="color:var(--text3);font-size:14px;padding:20px;text-align:center;">불러오는 중...</div></div>
+
+    <div style="margin-top:40px;text-align:center;">
+      <button onclick="lpGoHome()" style="padding:13px 32px;font-size:15px;font-weight:500;border:none;border-radius:30px;background:var(--accent);color:#fff;cursor:pointer;">+ 새로운 공고에 지원하기</button>
+    </div>
+  </div>
+</div>
+
 <div id="viewAuth" class="hidden">
   <div class="layout">
     <div class="auth-wrap">
@@ -397,6 +430,10 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
         <div class="complete-row"><span class="label">이메일</span><span class="val" id="cEmail"></span></div>
       </div>
       <p style="font-size:12px;color:var(--text3);">문의: recruit@company.com</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:24px;">
+        <button onclick="showMyApplications()" style="padding:12px 24px;font-size:14px;font-weight:500;border:none;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;">내 지원 현황 보기</button>
+        <button onclick="lpGoHome()" style="padding:12px 24px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:10px;background:var(--surface);color:var(--text);cursor:pointer;">채용 홈으로</button>
+      </div>
     </div>
   </div>
 </div>
@@ -536,12 +573,18 @@ function lpGoHome() {
 function applyToJob(id, title, dept, type) {
   jobPostingId = id;
   jobTitle = title;
+  applicationId = null; // 새 공고 → 이 공고의 draft를 새로 찾도록 초기화
   document.getElementById('jobBadge').textContent = title;
   document.getElementById('viewJobDetail').classList.add('hidden');
   document.getElementById('viewLanding').classList.add('hidden');
   document.getElementById('mainHeader').style.display = '';
-  document.getElementById('viewAuth').classList.remove('hidden');
   window.scrollTo({ top: 0 });
+  // 이미 로그인했으면 로그인 화면 건너뛰고 바로 지원서로
+  if (currentUser) {
+    showForm();
+  } else {
+    document.getElementById('viewAuth').classList.remove('hidden');
+  }
   if (!window._lpSuppressHistory) history.pushState({ view: 'auth', id }, '', '#apply-' + id);
 }
 
@@ -660,6 +703,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (session) {
     currentUser = session.user;
     // 세션이 있어도 랜딩 페이지를 먼저 보여줌 (공고 선택 후 지원)
+    updateFloatingLogout();
+    startIdleTimer();
   }
 
   // Auth 상태 변화 감지
@@ -716,7 +761,7 @@ async function doSignup() {
     const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: pw });
     if (!loginErr && loginData.user) currentUser = loginData.user;
   }
-  showForm();
+  afterAuth();
 }
 
 async function doLogin() {
@@ -731,11 +776,145 @@ async function doLogin() {
   currentUser = data.user;
   fd.basic.email = email;
   
+  afterAuth();
+}
+
+// 인증 후 이동: 공고를 이미 골랐으면 지원서로, 아니면 내 지원 현황으로
+function afterAuth() {
+  if (jobPostingId) {
+    showForm();
+  } else {
+    showMyApplications();
+  }
+}
+
+// ── 내 지원 현황 ─────────────────────────────────────────
+async function showMyApplications() {
+  startIdleTimer();
+  updateFloatingLogout();
+  ['viewLanding','viewJobDetail','viewAuth','viewForm','viewComplete','viewVerify'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.add('hidden');
+  });
+  document.getElementById('mainHeader').style.display='none';
+  document.getElementById('viewMyApplications').classList.remove('hidden');
+  window.scrollTo({top:0});
+
+  const nm = currentUser?.user_metadata?.name || currentUser?.email || '';
+  document.getElementById('myAppGreeting').textContent = `${nm}님, 안녕하세요. 지원 현황을 확인하세요.`;
+
+  try {
+    const { data } = await sb.from('company_info').select('image_url').eq('section','logo').maybeSingle();
+    if (data?.image_url) {
+      const l = document.getElementById('lpNavLogo3');
+      if (l) l.innerHTML = `<img src="${data.image_url}" alt="회사 로고" style="max-height:34px;max-width:200px;display:block">`;
+    }
+  } catch(e){}
+
+  const { data: apps, error } = await sb.from('applications')
+    .select('id, job_posting_id, is_draft, submitted_at, updated_at, job_postings(title, department)')
+    .eq('applicant_id', currentUser.id)
+    .order('updated_at', { ascending: false });
+
+  const draftBox = document.getElementById('myDraftList');
+  const subBox = document.getElementById('mySubmittedList');
+
+  if (error) {
+    draftBox.innerHTML = subBox.innerHTML = `<div style="color:#c0392b;font-size:13px;padding:16px;">불러오기 실패: ${error.message}</div>`;
+    return;
+  }
+
+  const drafts = (apps||[]).filter(a=>a.is_draft);
+  const submitted = (apps||[]).filter(a=>!a.is_draft);
+
+  if (!drafts.length) {
+    draftBox.innerHTML = `<div style="color:var(--text3);font-size:14px;padding:20px;text-align:center;border:1px dashed var(--border2);border-radius:12px;">작성 중인 지원서가 없습니다.</div>`;
+  } else {
+    draftBox.innerHTML = drafts.map(d=>{
+      const title = d.job_postings?.title || '(공고 정보 없음)';
+      const dept = d.job_postings?.department || '';
+      const when = d.updated_at ? new Date(d.updated_at).toLocaleDateString('ko-KR') : '';
+      return `<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div style="min-width:0;">
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;">${title}</div>
+          <div style="font-size:12px;color:var(--text3);">${dept ? dept+' · ' : ''}최근 저장 ${when}</div>
+        </div>
+        <button onclick="continueDraft('${d.id}','${d.job_posting_id||''}','${(title).replace(/'/g,"\\'")}')" style="flex-shrink:0;padding:10px 20px;font-size:14px;font-weight:500;border:none;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;">이어서 작성 →</button>
+      </div>`;
+    }).join('');
+  }
+
+  if (!submitted.length) {
+    subBox.innerHTML = `<div style="color:var(--text3);font-size:14px;padding:20px;text-align:center;border:1px dashed var(--border2);border-radius:12px;">아직 지원 완료된 내역이 없습니다.</div>`;
+  } else {
+    subBox.innerHTML = submitted.map(sub=>{
+      const title = sub.job_postings?.title || '(공고 정보 없음)';
+      const dept = sub.job_postings?.department || '';
+      const when = sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('ko-KR') : '';
+      return `<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div style="min-width:0;">
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;">${title}</div>
+          <div style="font-size:12px;color:var(--text3);">${dept ? dept+' · ' : ''}지원일 ${when}</div>
+        </div>
+        <span style="flex-shrink:0;padding:7px 16px;font-size:13px;font-weight:600;border-radius:20px;background:#E8F5E9;color:#2E7D32;">지원 완료</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+async function continueDraft(appId, jobId, title) {
+  applicationId = appId;
+  jobPostingId = jobId || null;
+  jobTitle = title || '';
+  document.getElementById('viewMyApplications').classList.add('hidden');
+  document.getElementById('mainHeader').style.display = '';
+  document.getElementById('jobBadge').textContent = title || '지원서';
   showForm();
 }
 
 async function logout() {
+  clearIdleTimer();
   await sb.auth.signOut();
+  location.reload();
+}
+
+// 로그인 상태에 따라 고정 로그아웃 버튼 표시/숨김
+function updateFloatingLogout() {
+  const el = document.getElementById('floatingLogout');
+  if (!el) return;
+  if (currentUser) {
+    el.style.display = 'flex';
+    const nm = currentUser.user_metadata?.name || currentUser.email || '';
+    document.getElementById('floatingName').textContent = nm;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ── 자동 로그아웃 (30분 무활동) ──────────────────────────
+let _idleTimer = null;
+const IDLE_LIMIT = 30 * 60 * 1000; // 30분
+
+function startIdleTimer() {
+  clearIdleTimer();
+  _idleTimer = setTimeout(autoLogout, IDLE_LIMIT);
+  // 활동 감지 시 타이머 리셋
+  ['click','keydown','mousemove','scroll','touchstart'].forEach(ev => {
+    document.addEventListener(ev, resetIdleTimer, { passive: true });
+  });
+}
+function resetIdleTimer() {
+  if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = setTimeout(autoLogout, IDLE_LIMIT); }
+}
+function clearIdleTimer() {
+  if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
+  ['click','keydown','mousemove','scroll','touchstart'].forEach(ev => {
+    document.removeEventListener(ev, resetIdleTimer);
+  });
+}
+async function autoLogout() {
+  clearIdleTimer();
+  try { await sb.auth.signOut(); } catch(e) {}
+  alert('30분 동안 활동이 없어 자동 로그아웃되었습니다.\n다시 로그인해 주세요.');
   location.reload();
 }
 
@@ -746,6 +925,8 @@ function showErr(el, msg) {
 
 // ── 폼 진입 ──────────────────────────────────────────────
 async function showForm() {
+  startIdleTimer(); // 로그인 후 30분 무활동 자동 로그아웃 시작
+  updateFloatingLogout();
   document.getElementById('viewAuth').classList.add('hidden');
   document.getElementById('viewForm').classList.remove('hidden');
   document.getElementById('navBar').classList.remove('hidden');
@@ -753,10 +934,19 @@ async function showForm() {
   document.getElementById('headerName').textContent = currentUser.user_metadata?.name || currentUser.email;
 
   // 기존 임시저장 데이터 불러오기
+  // - continueDraft로 특정 applicationId가 지정된 경우: 그 지원서를 로드
+  // - 아니면 현재 공고(jobPostingId)의 임시저장을 찾음 (공고당 1개)
   showLoading('저장된 정보 불러오는 중...');
-  const {data:app} = await sb.from('applications')
-    .select('*').eq('applicant_id', currentUser.id)
-    .eq('is_draft', true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+  let draftQuery = sb.from('applications').select('*')
+    .eq('applicant_id', currentUser.id).eq('is_draft', true);
+  if (applicationId) {
+    draftQuery = draftQuery.eq('id', applicationId);
+  } else if (jobPostingId) {
+    draftQuery = draftQuery.eq('job_posting_id', jobPostingId);
+  } else {
+    draftQuery = draftQuery.order('updated_at',{ascending:false});
+  }
+  const {data:app} = await draftQuery.limit(1).maybeSingle();
 
   if(app) {
     applicationId = app.id;
