@@ -909,16 +909,18 @@ async function logout() {
 // 로그인 상태에 따라 로그인 UI 표시/숨김
 function updateFloatingLogout() {
   const nm = currentUser ? (currentUser.user_metadata?.name || currentUser.email || '') : '';
-  // 랜딩 내비 안의 로그인 영역
+  const landingVisible = !document.getElementById('viewLanding')?.classList.contains('hidden');
+  const myAppsVisible = !document.getElementById('viewMyApplications')?.classList.contains('hidden');
+  const jobDetailVisible = !document.getElementById('viewJobDetail')?.classList.contains('hidden');
+  const hasNav = landingVisible || myAppsVisible || jobDetailVisible;
+
+  // 랜딩 내비 안의 로그인 영역: 로그인 상태 + 랜딩 화면일 때만
   const navAuth = document.getElementById('lpNavAuth');
-  if (navAuth) navAuth.style.display = currentUser ? 'inline-flex' : 'none';
-  // 플로팅 버튼 (랜딩·현황 화면에서는 lp-nav가 있으므로 숨김, 그 외 화면에서만 표시)
+  if (navAuth) navAuth.style.display = (currentUser && landingVisible) ? 'inline-flex' : 'none';
+
+  // 플로팅 버튼: 로그인 상태 + lp-nav 없는 화면(지원서 등)일 때만
   const el = document.getElementById('floatingLogout');
   if (el) {
-    const landingVisible = !document.getElementById('viewLanding')?.classList.contains('hidden');
-    const myAppsVisible = !document.getElementById('viewMyApplications')?.classList.contains('hidden');
-    const jobDetailVisible = !document.getElementById('viewJobDetail')?.classList.contains('hidden');
-    const hasNav = landingVisible || myAppsVisible || jobDetailVisible;
     if (currentUser && !hasNav) {
       el.style.display = 'flex';
       document.getElementById('floatingName').textContent = nm;
