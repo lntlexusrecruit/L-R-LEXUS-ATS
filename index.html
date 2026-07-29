@@ -239,6 +239,10 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
       <button class="lp-nav-link" onclick="lpScrollTo('lpVision')">비전/미션</button>
       <button class="lp-nav-link" onclick="lpScrollTo('lpWelfare')">복리후생</button>
       <button class="lp-nav-link" onclick="lpScrollTo('lpJobs')" style="color:var(--accent);font-weight:500">채용공고</button>
+      <span id="lpNavAuth" style="display:none;align-items:center;gap:6px;margin-left:10px;padding-left:14px;border-left:1px solid var(--border);">
+        <button class="lp-nav-link" style="background:var(--accent);color:#fff;border-radius:8px;" onclick="showMyApplications()">내 지원 현황</button>
+        <button class="lp-nav-link" onclick="logout()">로그아웃</button>
+      </span>
     </div>
   </nav>
 
@@ -344,7 +348,7 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
     <div id="mySubmittedList"><div style="color:var(--text3);font-size:14px;padding:20px;text-align:center;">불러오는 중...</div></div>
 
     <div style="margin-top:40px;text-align:center;">
-      <button onclick="lpGoHome()" style="padding:13px 32px;font-size:15px;font-weight:500;border:none;border-radius:30px;background:var(--accent);color:#fff;cursor:pointer;">+ 새로운 공고에 지원하기</button>
+      <button onclick="goToJobList()" style="padding:13px 32px;font-size:15px;font-weight:500;border:none;border-radius:30px;background:var(--accent);color:#fff;cursor:pointer;">+ 새로운 공고에 지원하기</button>
     </div>
   </div>
 </div>
@@ -552,6 +556,7 @@ function showJobDetail(id) {
   document.getElementById('viewLanding').classList.add('hidden');
   document.getElementById('viewJobDetail').classList.remove('hidden');
   window.scrollTo({ top: 0 });
+  updateFloatingLogout();
   if (!window._lpSuppressHistory) history.pushState({ view: 'jobDetail', id }, '', '#job-' + id);
 }
 
@@ -559,30 +564,46 @@ function escapeHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// 모든 최상위 뷰를 한 번에 숨김 (중복 표시 방지)
+function hideAllViews() {
+  ['viewLanding','viewJobDetail','viewMyApplications','viewAuth','viewForm','viewComplete','viewVerify','viewJobSelect'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.add('hidden');
+  });
+  const mh=document.getElementById('mainHeader'); if(mh) mh.style.display='none';
+}
+
 function lpGoHome() {
-  document.getElementById('viewJobDetail').classList.add('hidden');
-  document.getElementById('viewJobSelect').classList.add('hidden');
-  document.getElementById('viewAuth').classList.add('hidden');
-  document.getElementById('mainHeader').style.display = 'none';
+  hideAllViews();
   document.getElementById('viewLanding').classList.remove('hidden');
   window.scrollTo({ top: 0 });
+  updateFloatingLogout();
   if (!window._lpSuppressHistory) history.pushState({ view: 'home' }, '', location.pathname);
 }
 
-// 공고 상세에서 "지원하기" → 기존 로그인/지원 흐름으로 연결
+// 랜딩으로 가서 "현재 채용 중인 공고" 목록으로 스크롤
+function goToJobList() {
+  hideAllViews();
+  document.getElementById('viewLanding').classList.remove('hidden');
+  updateFloatingLogout();
+  if (!window._lpSuppressHistory) history.pushState({ view: 'home' }, '', location.pathname);
+  // 렌더 후 공고 섹션으로 스크롤
+  setTimeout(() => { document.getElementById('lpJobs')?.scrollIntoView({ behavior:'smooth', block:'start' }); }, 60);
+}
+
+// 공고 상세에서 "지원하기" → 로그인 또는 바로 지원서
 function applyToJob(id, title, dept, type) {
   jobPostingId = id;
   jobTitle = title;
   applicationId = null; // 새 공고 → 이 공고의 draft를 새로 찾도록 초기화
-  document.getElementById('jobBadge').textContent = title;
-  document.getElementById('viewJobDetail').classList.add('hidden');
-  document.getElementById('viewLanding').classList.add('hidden');
-  document.getElementById('mainHeader').style.display = '';
+  jobTitle = title;
   window.scrollTo({ top: 0 });
   // 이미 로그인했으면 로그인 화면 건너뛰고 바로 지원서로
   if (currentUser) {
     showForm();
   } else {
+    hideAllViews();
+    document.getElementById('mainHeader').style.display = '';
+    document.getElementById('jobBadge').textContent = title;
     document.getElementById('viewAuth').classList.remove('hidden');
   }
   if (!window._lpSuppressHistory) history.pushState({ view: 'auth', id }, '', '#apply-' + id);
@@ -791,12 +812,9 @@ function afterAuth() {
 // ── 내 지원 현황 ─────────────────────────────────────────
 async function showMyApplications() {
   startIdleTimer();
-  updateFloatingLogout();
-  ['viewLanding','viewJobDetail','viewAuth','viewForm','viewComplete','viewVerify'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.classList.add('hidden');
-  });
-  document.getElementById('mainHeader').style.display='none';
+  hideAllViews();
   document.getElementById('viewMyApplications').classList.remove('hidden');
+  updateFloatingLogout();
   window.scrollTo({top:0});
 
   const nm = currentUser?.user_metadata?.name || currentUser?.email || '';
@@ -865,8 +883,6 @@ async function continueDraft(appId, jobId, title) {
   applicationId = appId;
   jobPostingId = jobId || null;
   jobTitle = title || '';
-  document.getElementById('viewMyApplications').classList.add('hidden');
-  document.getElementById('mainHeader').style.display = '';
   document.getElementById('jobBadge').textContent = title || '지원서';
   showForm();
 }
@@ -877,16 +893,25 @@ async function logout() {
   location.reload();
 }
 
-// 로그인 상태에 따라 고정 로그아웃 버튼 표시/숨김
+// 로그인 상태에 따라 로그인 UI 표시/숨김
 function updateFloatingLogout() {
+  const nm = currentUser ? (currentUser.user_metadata?.name || currentUser.email || '') : '';
+  // 랜딩 내비 안의 로그인 영역
+  const navAuth = document.getElementById('lpNavAuth');
+  if (navAuth) navAuth.style.display = currentUser ? 'inline-flex' : 'none';
+  // 플로팅 버튼 (랜딩·현황 화면에서는 lp-nav가 있으므로 숨김, 그 외 화면에서만 표시)
   const el = document.getElementById('floatingLogout');
-  if (!el) return;
-  if (currentUser) {
-    el.style.display = 'flex';
-    const nm = currentUser.user_metadata?.name || currentUser.email || '';
-    document.getElementById('floatingName').textContent = nm;
-  } else {
-    el.style.display = 'none';
+  if (el) {
+    const landingVisible = !document.getElementById('viewLanding')?.classList.contains('hidden');
+    const myAppsVisible = !document.getElementById('viewMyApplications')?.classList.contains('hidden');
+    const jobDetailVisible = !document.getElementById('viewJobDetail')?.classList.contains('hidden');
+    const hasNav = landingVisible || myAppsVisible || jobDetailVisible;
+    if (currentUser && !hasNav) {
+      el.style.display = 'flex';
+      document.getElementById('floatingName').textContent = nm;
+    } else {
+      el.style.display = 'none';
+    }
   }
 }
 
@@ -926,12 +951,13 @@ function showErr(el, msg) {
 // ── 폼 진입 ──────────────────────────────────────────────
 async function showForm() {
   startIdleTimer(); // 로그인 후 30분 무활동 자동 로그아웃 시작
-  updateFloatingLogout();
-  document.getElementById('viewAuth').classList.add('hidden');
+  hideAllViews();
+  document.getElementById('mainHeader').style.display = '';
   document.getElementById('viewForm').classList.remove('hidden');
   document.getElementById('navBar').classList.remove('hidden');
   document.getElementById('headerUser').classList.remove('hidden');
   document.getElementById('headerName').textContent = currentUser.user_metadata?.name || currentUser.email;
+  updateFloatingLogout();
 
   // 기존 임시저장 데이터 불러오기
   // - continueDraft로 특정 applicationId가 지정된 경우: 그 지원서를 로드
