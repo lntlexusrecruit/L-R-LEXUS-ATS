@@ -347,9 +347,7 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
     <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:0.05em;margin-bottom:12px;">📋 지원 완료</div>
     <div id="mySubmittedList"><div style="color:var(--text3);font-size:14px;padding:20px;text-align:center;">불러오는 중...</div></div>
 
-    <div style="margin-top:40px;text-align:center;">
-      <button onclick="goToJobList()" style="padding:13px 32px;font-size:15px;font-weight:500;border:none;border-radius:30px;background:var(--accent);color:#fff;cursor:pointer;">+ 새로운 공고에 지원하기</button>
-    </div>
+    <div id="myAppActionBox" style="margin-top:40px;text-align:center;"></div>
   </div>
 </div>
 
@@ -582,6 +580,7 @@ function lpGoHome() {
 
 // 랜딩으로 가서 "현재 채용 중인 공고" 목록으로 스크롤
 function goToJobList() {
+  jobPostingId = null; jobTitle = ''; applicationId = null; // 선택 공고 초기화
   hideAllViews();
   document.getElementById('viewLanding').classList.remove('hidden');
   updateFloatingLogout();
@@ -590,23 +589,22 @@ function goToJobList() {
   setTimeout(() => { document.getElementById('lpJobs')?.scrollIntoView({ behavior:'smooth', block:'start' }); }, 60);
 }
 
-// 공고 상세에서 "지원하기" → 로그인 또는 바로 지원서
+// 공고 상세에서 "지원하기" → (로그인) → 내 지원 현황 (거기서 이 공고 지원 버튼)
 function applyToJob(id, title, dept, type) {
   jobPostingId = id;
   jobTitle = title;
   applicationId = null; // 새 공고 → 이 공고의 draft를 새로 찾도록 초기화
-  jobTitle = title;
   window.scrollTo({ top: 0 });
-  // 이미 로그인했으면 로그인 화면 건너뛰고 바로 지원서로
   if (currentUser) {
-    showForm();
+    // 이미 로그인 → 지원 현황으로 (하단에 이 공고 지원 버튼이 뜸)
+    showMyApplications();
   } else {
     hideAllViews();
     document.getElementById('mainHeader').style.display = '';
     document.getElementById('jobBadge').textContent = title;
     document.getElementById('viewAuth').classList.remove('hidden');
+    if (!window._lpSuppressHistory) history.pushState({ view: 'auth', id }, '', '#apply-' + id);
   }
-  if (!window._lpSuppressHistory) history.pushState({ view: 'auth', id }, '', '#apply-' + id);
 }
 
 // 브라우저 뒤로/앞으로 가기 처리
@@ -802,11 +800,9 @@ async function doLogin() {
 
 // 인증 후 이동: 공고를 이미 골랐으면 지원서로, 아니면 내 지원 현황으로
 function afterAuth() {
-  if (jobPostingId) {
-    showForm();
-  } else {
-    showMyApplications();
-  }
+  // 로그인/회원가입 후 항상 '내 지원 현황'을 먼저 보여준다.
+  // (방금 고른 공고가 있으면 현황 화면 하단에 그 공고 지원 버튼이 뜬다)
+  showMyApplications();
 }
 
 // ── 내 지원 현황 ─────────────────────────────────────────
@@ -819,6 +815,17 @@ async function showMyApplications() {
 
   const nm = currentUser?.user_metadata?.name || currentUser?.email || '';
   document.getElementById('myAppGreeting').textContent = `${nm}님, 안녕하세요. 지원 현황을 확인하세요.`;
+
+  // 하단 액션 버튼: 방금 고른 공고가 있으면 "○○ 지원하기", 없으면 공고 목록으로
+  const actionBox = document.getElementById('myAppActionBox');
+  if (jobPostingId && jobTitle) {
+    actionBox.innerHTML = `
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">선택하신 공고에 지원을 진행하시겠어요?</div>
+      <button onclick="startApplyToSelectedJob()" style="padding:14px 34px;font-size:15px;font-weight:600;border:none;border-radius:30px;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(83,74,183,0.25);">${jobTitle} 지원하기 →</button>
+      <div style="margin-top:14px;"><button onclick="goToJobList()" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;text-decoration:underline;">다른 공고 보기</button></div>`;
+  } else {
+    actionBox.innerHTML = `<button onclick="goToJobList()" style="padding:13px 32px;font-size:15px;font-weight:500;border:none;border-radius:30px;background:var(--accent);color:#fff;cursor:pointer;">+ 새로운 공고에 지원하기</button>`;
+  }
 
   try {
     const { data } = await sb.from('company_info').select('image_url').eq('section','logo').maybeSingle();
@@ -877,6 +884,12 @@ async function showMyApplications() {
       </div>`;
     }).join('');
   }
+}
+
+// 현황 화면에서 "○○ 지원하기" → 그 공고 지원서로
+function startApplyToSelectedJob() {
+  document.getElementById('jobBadge').textContent = jobTitle || '지원서';
+  showForm();
 }
 
 async function continueDraft(appId, jobId, title) {
