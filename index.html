@@ -974,7 +974,58 @@ function nextStep(){
     skillInput.value = '';
   }
   collectStep();
+  // 현재 단계 필수 입력 검증 (통과 못하면 이동 불가)
+  if(!validateStep(currentStep)) return;
   if(currentStep<STEPS.length-1){currentStep++;buildStep(currentStep);}else{submitApplication();}
+}
+
+// 단계별 필수 입력 검증
+// 필수: 기본정보 / 학력 / 경력(신입 제외) / 자기소개
+// 선택: 자격증 · 어학 · 수상 · 포트폴리오 (step 3은 검증 안 함)
+function validateStep(step){
+  if(step===0){
+    const b=fd.basic;
+    const need=[['name','이름'],['birth','생년월일'],['gender','성별'],['email','이메일'],['phone','휴대폰'],['startDate','입사 가능일']];
+    for(const [k,label] of need){
+      if(!b[k]||!String(b[k]).trim()){ showToast(`'${label}'을(를) 입력해 주세요`); return false; }
+    }
+    return true;
+  }
+  if(step===1){
+    // 학력 최소 1개, 각 학력의 학교명 필수
+    const edus=(fd.education||[]).filter(e=>e&&Object.keys(e).length);
+    if(!edus.length){ showToast('학력을 최소 1개 입력해 주세요'); return false; }
+    for(let i=0;i<edus.length;i++){
+      if(!edus[i].school||!edus[i].school.trim()){ showToast(`학력 ${i+1}의 학교명을 입력해 주세요`); return false; }
+    }
+    return true;
+  }
+  if(step===2){
+    // 신입/경력없음 체크 시 통과
+    const noExp=fd.career[0]&&fd.career[0].noExp;
+    if(noExp) return true;
+    const cars=(fd.career||[]).filter(c=>c&&!c.noExp&&Object.keys(c).length);
+    if(!cars.length){ showToast('경력을 입력하거나 \'신입 / 경력 없음\'을 선택해 주세요'); return false; }
+    for(let i=0;i<cars.length;i++){
+      if(!cars[i].company||!cars[i].company.trim()){ showToast(`경력 ${i+1}의 회사명을 입력해 주세요`); return false; }
+      if(!cars[i].startMonth){ showToast(`경력 ${i+1}의 입사년월을 입력해 주세요`); return false; }
+    }
+    return true;
+  }
+  if(step===3){
+    // 자격·어학·수상·포트폴리오 → 모두 선택. 검증 없음.
+    return true;
+  }
+  if(step===4){
+    // 자기소개 5문항 필수
+    const qs=['q1','q2','q3','q4','q5'];
+    for(let i=0;i<qs.length;i++){
+      const v=fd.essay[qs[i]];
+      if(!v||!v.trim()){ showToast(`자기소개 ${i+1}번 문항을 작성해 주세요`); return false; }
+    }
+    return true;
+  }
+  return true;
 }
 function prevStep(){collectStep();if(currentStep>0){currentStep--;buildStep(currentStep);}}
 
@@ -1112,7 +1163,11 @@ function buildCareer(){
   card.appendChild(cw);
   const ab=document.createElement('button');ab.className='add-entry-btn';ab.id='addCareerBtn';ab.innerHTML='+ 경력 추가';
   if(isNoExp)ab.style.display='none';
-  ab.onclick=()=>{fd.career.push({});cw.appendChild(mkCareerEntry({},fd.career.length-1));};
+  ab.onclick=()=>{
+    const cnt=fd.career.filter(c=>!c.noExp).length;
+    if(cnt>=6){showToast('경력은 최대 6개까지 입력 가능합니다');return;}
+    fd.career.push({});cw.appendChild(mkCareerEntry({},fd.career.length-1));
+  };
   card.appendChild(ab);w.appendChild(card);return w;
 }
 function togNoExp(cb){
@@ -1139,7 +1194,7 @@ function buildExtra(){
   // 자격증
   const cc=mk('form-card');cc.innerHTML='<div class="card-title"><span class="card-title-icon">📜</span>자격증</div>';
   const cw=mk('');cw.id='certWrap';(fd.extra.certs||[{}]).forEach((c,i)=>cw.appendChild(mkCertEntry(c,i)));
-  cc.appendChild(cw);const ca=mkAddBtn('+ 자격증 추가',()=>{if(!fd.extra.certs)fd.extra.certs=[];fd.extra.certs.push({});cw.appendChild(mkCertEntry({},fd.extra.certs.length-1));});cc.appendChild(ca);w.appendChild(cc);
+  cc.appendChild(cw);const ca=mkAddBtn('+ 자격증 추가',()=>{if(!fd.extra.certs)fd.extra.certs=[];if(fd.extra.certs.length>=4){showToast('자격증은 최대 4개까지 입력 가능합니다');return;}fd.extra.certs.push({});cw.appendChild(mkCertEntry({},fd.extra.certs.length-1));});cc.appendChild(ca);w.appendChild(cc);
   // 수상
   const ac=mk('form-card');ac.innerHTML='<div class="card-title"><span class="card-title-icon">🏆</span>수상 및 대외활동</div>';
   const aw=mk('');aw.id='awardWrap';(fd.extra.awards||[{}]).forEach((a,i)=>aw.appendChild(mkAwardEntry(a,i)));
@@ -1147,7 +1202,7 @@ function buildExtra(){
   // 어학
   const lc=mk('form-card');lc.innerHTML='<div class="card-title"><span class="card-title-icon">🌐</span>어학</div>';
   const lw=mk('');lw.id='langWrap';(fd.extra.langs||[]).forEach((l,i)=>lw.appendChild(mkLangEntry(l,i)));
-  lc.appendChild(lw);const la=mkAddBtn('+ 어학 추가',()=>{if(!fd.extra.langs)fd.extra.langs=[];fd.extra.langs.push({});lw.appendChild(mkLangEntry({},fd.extra.langs.length-1));});lc.appendChild(la);w.appendChild(lc);
+  lc.appendChild(lw);const la=mkAddBtn('+ 어학 추가',()=>{if(!fd.extra.langs)fd.extra.langs=[];if(fd.extra.langs.length>=4){showToast('어학은 최대 4개까지 입력 가능합니다');return;}fd.extra.langs.push({});lw.appendChild(mkLangEntry({},fd.extra.langs.length-1));});lc.appendChild(la);w.appendChild(lc);
   // 링크
   const pc=mk('form-card');pc.innerHTML=`<div class="card-title"><span class="card-title-icon">🔗</span>포트폴리오 / 링크</div>
   <div class="field-row"><div class="field"><label class="field-label">GitHub</label><input type="url" id="f_gh" value="${fd.extra.github||''}" placeholder="https://github.com/username"></div><div class="field"><label class="field-label">LinkedIn</label><input type="url" id="f_li" value="${fd.extra.linkedin||''}" placeholder="https://linkedin.com/in/username"></div></div>
