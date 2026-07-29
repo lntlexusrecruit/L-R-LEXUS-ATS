@@ -234,14 +234,16 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 <div id="viewLanding">
   <nav class="lp-nav">
     <div class="lp-nav-logo" id="lpNavLogo" onclick="lpScrollTo('lpHero')">엘앤티렉서스(주)</div>
-    <div class="lp-nav-menu">
-      <button class="lp-nav-link" onclick="lpScrollTo('lpTalent')">인재상</button>
-      <button class="lp-nav-link" onclick="lpScrollTo('lpVision')">비전/미션</button>
-      <button class="lp-nav-link" onclick="lpScrollTo('lpWelfare')">복리후생</button>
-      <button class="lp-nav-link" onclick="lpScrollTo('lpJobs')" style="color:var(--accent);font-weight:500">채용공고</button>
-      <span id="lpNavAuth" style="display:none;align-items:center;gap:6px;margin-left:10px;padding-left:14px;border-left:1px solid var(--border);">
-        <button class="lp-nav-link" style="background:var(--accent);color:#fff;border-radius:8px;" onclick="showMyApplications()">내 지원 현황</button>
-        <button class="lp-nav-link" onclick="logout()">로그아웃</button>
+    <div style="display:flex;align-items:center;">
+      <div class="lp-nav-menu">
+        <button class="lp-nav-link" onclick="lpScrollTo('lpTalent')">인재상</button>
+        <button class="lp-nav-link" onclick="lpScrollTo('lpVision')">비전/미션</button>
+        <button class="lp-nav-link" onclick="lpScrollTo('lpWelfare')">복리후생</button>
+        <button class="lp-nav-link" onclick="lpScrollTo('lpJobs')" style="color:var(--accent);font-weight:500">채용공고</button>
+      </div>
+      <span id="lpNavAuth" style="display:none;align-items:center;gap:6px;margin-left:14px;padding-left:14px;border-left:1px solid var(--border);">
+        <button class="lp-nav-link" style="background:var(--accent);color:#fff;border-radius:8px;white-space:nowrap;" onclick="showMyApplications()">내 지원 현황</button>
+        <button class="lp-nav-link" style="white-space:nowrap;" onclick="logout()">로그아웃</button>
       </span>
     </div>
   </nav>
@@ -930,32 +932,101 @@ function updateFloatingLogout() {
   }
 }
 
-// ── 자동 로그아웃 (30분 무활동) ──────────────────────────
-let _idleTimer = null;
-const IDLE_LIMIT = 30 * 60 * 1000; // 30분
+// ── 자동 로그아웃 (30분 무활동, 마지막 2분은 연장 팝업) ──────────
+let _idleDeadline = 0;      // 자동 로그아웃 예정 시각(ms)
+let _idleTick = null;       // 1초마다 카운트다운 갱신
+let _warnShown = false;     // 연장 팝업 표시 여부
+const IDLE_LIMIT = 30 * 60 * 1000;   // 총 30분
+const WARN_BEFORE = 2 * 60 * 1000;   // 종료 2분 전 팝업
 
 function startIdleTimer() {
   clearIdleTimer();
-  _idleTimer = setTimeout(autoLogout, IDLE_LIMIT);
-  // 활동 감지 시 타이머 리셋
+  _idleDeadline = Date.now() + IDLE_LIMIT;
+  _warnShown = false;
   ['click','keydown','mousemove','scroll','touchstart'].forEach(ev => {
-    document.addEventListener(ev, resetIdleTimer, { passive: true });
+    document.addEventListener(ev, onUserActivity, { passive: true });
   });
+  ensureIdleUI();
+  _idleTick = setInterval(idleTickFn, 1000);
+  idleTickFn();
 }
-function resetIdleTimer() {
-  if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = setTimeout(autoLogout, IDLE_LIMIT); }
+function onUserActivity() {
+  // 연장 팝업이 떠 있는 동안엔 자동 리셋하지 않음(사용자가 명시적으로 연장/로그아웃 선택)
+  if (_warnShown) return;
+  _idleDeadline = Date.now() + IDLE_LIMIT;
+}
+function idleTickFn() {
+  const remain = _idleDeadline - Date.now();
+  // 카운트다운 표시 갱신
+  const badge = document.getElementById('idleCountdown');
+  if (badge) {
+    const secTotal = Math.max(0, Math.floor(remain/1000));
+    const mm = String(Math.floor(secTotal/60)).padStart(2,'0');
+    const ss = String(secTotal%60).padStart(2,'0');
+    badge.textContent = `⏱ 자동 로그아웃까지 ${mm}:${ss}`;
+    badge.style.background = remain <= WARN_BEFORE ? '#FDECEC' : 'rgba(255,255,255,0.92)';
+    badge.style.color = remain <= WARN_BEFORE ? '#C0392B' : 'var(--text2)';
+  }
+  // 2분 전 → 연장 팝업
+  if (remain <= WARN_BEFORE && !_warnShown) {
+    _warnShown = true;
+    showExtendModal();
+  }
+  // 시간 만료 → 로그아웃
+  if (remain <= 0) {
+    doAutoLogout();
+  }
 }
 function clearIdleTimer() {
-  if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
+  if (_idleTick) { clearInterval(_idleTick); _idleTick = null; }
   ['click','keydown','mousemove','scroll','touchstart'].forEach(ev => {
-    document.removeEventListener(ev, resetIdleTimer);
+    document.removeEventListener(ev, onUserActivity);
   });
+  _warnShown = false;
+  const badge = document.getElementById('idleCountdown'); if (badge) badge.style.display='none';
+  const modal = document.getElementById('idleModal'); if (modal) modal.style.display='none';
 }
-async function autoLogout() {
+function extendSession() {
+  _warnShown = false;
+  _idleDeadline = Date.now() + IDLE_LIMIT;
+  const modal = document.getElementById('idleModal'); if (modal) modal.style.display='none';
+  showToast('✓ 로그인이 연장되었습니다');
+}
+async function doAutoLogout() {
   clearIdleTimer();
   try { await sb.auth.signOut(); } catch(e) {}
-  alert('30분 동안 활동이 없어 자동 로그아웃되었습니다.\n다시 로그인해 주세요.');
   location.reload();
+}
+
+// 카운트다운 배지 + 연장 팝업 DOM 생성 (한 번만)
+function ensureIdleUI() {
+  if (!document.getElementById('idleCountdown')) {
+    const b = document.createElement('div');
+    b.id = 'idleCountdown';
+    b.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:280;font-size:12px;font-weight:500;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,0.92);color:var(--text2);box-shadow:0 2px 8px rgba(0,0,0,0.12);';
+    document.body.appendChild(b);
+  }
+  document.getElementById('idleCountdown').style.display = 'block';
+  if (!document.getElementById('idleModal')) {
+    const m = document.createElement('div');
+    m.id = 'idleModal';
+    m.style.cssText = 'display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
+        <div style="font-size:36px;margin-bottom:12px;">⏱</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">잠시 후 자동 로그아웃됩니다</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:24px;">보안을 위해 곧 로그아웃됩니다.<br>계속 작성하시려면 로그인을 연장해 주세요.<br><span style="font-size:12px;color:var(--text3);">(작성 중인 내용은 '임시저장'을 눌러 보관할 수 있어요)</span></div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="logout()" style="flex:1;padding:12px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:10px;background:#fff;color:var(--text);cursor:pointer;">로그아웃</button>
+          <button onclick="extendSession()" style="flex:1;padding:12px;font-size:14px;font-weight:600;border:none;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;">로그인 연장</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+  }
+}
+function showExtendModal() {
+  const m = document.getElementById('idleModal');
+  if (m) m.style.display = 'flex';
 }
 
 function showErr(el, msg) {
