@@ -142,14 +142,14 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 .lp-nav-link:hover { background:var(--accent-bg); color:var(--accent); }
 
 .lp-hero { position:relative; text-align:center; padding:100px 24px 90px; background:linear-gradient(180deg, var(--accent-bg) 0%, var(--bg) 100%); }
-.lp-hero.has-image { padding:0; min-height:clamp(380px, 68vh, 760px); display:flex; flex-direction:column; align-items:center; justify-content:center; background-size:cover; background-position:center; background-repeat:no-repeat; }
+.lp-hero.has-image { padding:clamp(60px,17vh,160px) 20px 48px; min-height:clamp(380px, 68vh, 760px); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; background-size:cover; background-position:center; background-repeat:no-repeat; }
 .lp-hero-eyebrow { font-size:13px; font-weight:500; color:var(--accent); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:20px; }
 .lp-hero-title { font-family:'DM Serif Display',serif; font-size:clamp(34px, 6vw, 60px); line-height:1.15; color:var(--text); margin-bottom:20px; }
 .lp-hero-sub { font-size:16px; color:var(--text2); line-height:1.7; max-width:520px; margin:0 auto 36px; white-space:pre-line; }
 .lp-hero-cta { position:relative; z-index:2; display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; font-size:17px; font-weight:600; padding:17px 40px; border-radius:30px; border:none; cursor:pointer; font-family:'Pretendard',sans-serif; transition:all .18s; box-shadow:0 4px 16px rgba(83,74,183,0.25); }
 .lp-hero-cta:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 8px 24px rgba(83,74,183,0.32); }
 .lp-hero-inner { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; }
-.lp-hero.has-image .lp-hero-inner { background:rgba(255,255,255,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-radius:20px; padding:40px 44px; max-width:640px; margin:0 20px; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+.lp-hero.has-image .lp-hero-inner { background:rgba(255,255,255,0.2); backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px); border:1px solid rgba(255,255,255,0.35); border-radius:20px; padding:36px 40px; max-width:600px; margin:0 20px; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
 .lp-hero.has-image .lp-hero-title { font-family:'Pretendard',sans-serif; font-weight:600; font-size:clamp(26px,4.5vw,40px); margin-bottom:16px; color:var(--text); }
 .lp-hero.has-image .lp-hero-sub { color:var(--text); margin-bottom:0; }
 .lp-hero.has-image .lp-hero-cta { margin-top:24px; background:#fff; color:var(--accent); font-size:19px; padding:20px 52px; box-shadow:0 8px 28px rgba(0,0,0,0.28); }
@@ -193,7 +193,10 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
   .lp-nav-link { padding:8px 9px; font-size:13px; }
   .lp-nav-logo { font-size:16px; }
   .lp-hero { padding:64px 20px 56px; }
-  .lp-hero.has-image { padding:0; min-height:clamp(300px, 58vh, 520px); }
+  .lp-hero.has-image { padding:clamp(44px,13vh,100px) 14px 36px; min-height:clamp(300px, 58vh, 520px); }
+  .lp-hero.has-image .lp-hero-inner { padding:26px 22px; }
+  /* 모바일: 로고 반 크기로 축소 (인재상·비전 등과 정렬 개선) */
+  .lp-nav-logo img { max-height:18px !important; max-width:110px !important; }
   .lp-section, .lp-jobs { padding:48px 20px; }
   .lp-detail-wrap { grid-template-columns:1fr; padding:24px 16px 80px; }
   .lp-apply-box { position:static; }
@@ -528,6 +531,20 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 // ── 채용 랜딩 페이지 ──────────────────────────────────────
 let _lpJobs = [];
 
+// 모든 공고 상세에 공통으로 표시되는 기본 안내문 (전형절차·유의사항·서류반환 고지)
+const DEFAULT_JOB_NOTICE = `
+  <div class="lp-detail-block"><h3>전형 절차</h3><div class="lp-detail-block-body">· 서류전형 › 1차면접 › 임원면접 › 최종합격
+· 면접일정은 추후 통보됩니다.</div></div>
+  <div class="lp-detail-block"><h3>유의사항</h3><div class="lp-detail-block-body">· 허위사실이 발견될 경우 채용이 취소될 수 있습니다.
+· 최근 6개월 내 사진 필히 첨부 바랍니다.
+· 보훈대상 자녀 및 국가유공자 및 장애우 우대</div></div>
+  <div class="lp-detail-block"><h3>채용서류 반환 등에 관한 고지 (채용절차법 제11조 제6항)</h3><div class="lp-detail-block-body">· 자사에 이력서 및 포트폴리오를 지원하신 지원자분들은 반환을 요청하실 수 있습니다.
+· 채용서류를 반환받고 싶으신 지원자분은 02-2188-3565로 연락주십시오.
+· 반환 청구 전화를 주시면 7영업일 이내로 이력서에 기재하여 주신 이메일로 보내드립니다.
+· 반환 청구 전화 시 본인 확인 과정이 있을 수 있습니다.
+· 서류 반환 후, 당사에 지원하며 제출된 기존 서류는 모두 파기됩니다.
+· 서류 반환을 요청하지 않더라도 불합격자분들의 서류는 채용과정이 완료된 후 30일 이내에 파기됩니다.</div></div>`;
+
 function lpScrollTo(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -622,6 +639,7 @@ function showJobDetail(id) {
       </div>
       ${j.description?`<div class="lp-detail-block"><h3>직무 소개</h3><div class="lp-detail-block-body">${escapeHtml(j.description)}</div></div>`:''}
       ${j.requirements?`<div class="lp-detail-block"><h3>자격 요건</h3><div class="lp-detail-block-body">${escapeHtml(j.requirements)}</div></div>`:''}
+      ${DEFAULT_JOB_NOTICE}
     </div>
     <div class="lp-apply-box">
       <div class="lp-apply-box-label">이 공고에 지원하시겠어요?</div>
