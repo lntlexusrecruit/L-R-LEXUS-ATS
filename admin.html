@@ -510,7 +510,8 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
 const SUPABASE_URL = 'https://hslykriyfmnhbwzcocjs.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHlrcml5Zm1uaGJ3emNvY2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODIzMDQsImV4cCI6MjA5MzU1ODMwNH0.Ez5r-NSkQDvUmYjowHjMHeP_5BeqPxg59DxTrcKgKss';
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+// 관리자 세션은 지원자 페이지(index.html)와 분리된 저장소 사용 → 서로 자동 로그인 방지
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storageKey: 'ats-admin-auth' } });
 </script>
 
 <!-- 로그인 -->
