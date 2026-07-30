@@ -148,7 +148,12 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
 .lp-hero-sub { font-size:16px; color:var(--text2); line-height:1.7; max-width:520px; margin:0 auto 36px; white-space:pre-line; }
 .lp-hero-cta { position:relative; z-index:2; display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; font-size:17px; font-weight:600; padding:17px 40px; border-radius:30px; border:none; cursor:pointer; font-family:'Pretendard',sans-serif; transition:all .18s; box-shadow:0 4px 16px rgba(83,74,183,0.25); }
 .lp-hero-cta:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 8px 24px rgba(83,74,183,0.32); }
-.lp-hero.has-image .lp-hero-cta { font-size:19px; padding:20px 52px; box-shadow:0 8px 28px rgba(0,0,0,0.35); }
+.lp-hero-inner { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; }
+.lp-hero.has-image .lp-hero-inner { background:rgba(255,255,255,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-radius:20px; padding:40px 44px; max-width:640px; margin:0 20px; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+.lp-hero.has-image .lp-hero-title { font-family:'Pretendard',sans-serif; font-weight:600; font-size:clamp(26px,4.5vw,40px); margin-bottom:16px; color:var(--text); }
+.lp-hero.has-image .lp-hero-sub { color:var(--text); margin-bottom:0; }
+.lp-hero.has-image .lp-hero-cta { margin-top:24px; background:#fff; color:var(--accent); font-size:19px; padding:20px 52px; box-shadow:0 8px 28px rgba(0,0,0,0.28); }
+.lp-hero.has-image .lp-hero-cta:hover { background:#F2F1FB; color:var(--accent-hover); transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,0.32); }
 
 .lp-section { max-width:1500px; margin:0 auto; padding:64px 40px; scroll-margin-top:72px; }
 .lp-section-eyebrow { font-size:12px; font-weight:600; color:var(--accent); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px; text-align:center; }
@@ -267,9 +272,11 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
   </nav>
 
   <section class="lp-hero" id="lpHero">
-    <div class="lp-hero-eyebrow" id="lpHeroEyebrow">RECRUIT</div>
-    <h1 class="lp-hero-title" id="lpHeroTitle">함께 성장할<br>동료를 찾습니다</h1>
-    <div class="lp-hero-sub" id="lpAboutContent">불러오는 중...</div>
+    <div class="lp-hero-inner" id="lpHeroInner">
+      <div class="lp-hero-eyebrow" id="lpHeroEyebrow">RECRUIT</div>
+      <h1 class="lp-hero-title" id="lpHeroTitle">함께 성장할<br>동료를 찾습니다</h1>
+      <div class="lp-hero-sub" id="lpAboutContent">불러오는 중...</div>
+    </div>
     <button class="lp-hero-cta" onclick="lpScrollTo('lpJobs')">채용 공고 보기 →</button>
   </section>
 
@@ -461,6 +468,48 @@ body { font-family:'Pretendard',-apple-system,sans-serif; background:var(--bg); 
   </div>
 </div>
 
+<!-- 개인정보 수집·이용·제공 동의 (지원서 작성 전 필수) -->
+<div id="consentModal" style="display:none;position:fixed;inset:0;z-index:350;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:16px;max-width:660px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
+    <div style="padding:22px 26px;border-bottom:0.5px solid var(--border);">
+      <div style="font-size:18px;font-weight:700;">개인정보 수집·이용·제공 동의서</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">지원서 작성 전 아래 내용을 확인하고 동의해 주세요. (필수 항목 미동의 시 지원 불가)</div>
+    </div>
+    <div style="padding:20px 26px;overflow:auto;font-size:13px;color:var(--text2);line-height:1.75;">
+      <p style="margin-bottom:16px;">엘앤티렉서스(주)와의 채용절차와 관련하여 「개인정보 보호법」에 따라 본인의 개인정보를 아래와 같이 수집·이용하는 것에 동의합니다.</p>
+      <div style="border:0.5px solid var(--border2);border-radius:10px;overflow:hidden;font-size:12.5px;">
+        <div style="display:flex;border-bottom:0.5px solid var(--border);"><div style="flex:0 0 92px;background:var(--surface2);padding:10px 12px;font-weight:600;">목적</div><div style="padding:10px 12px;">채용 절차의 진행 및 관리, 경력·자격 등 확인(조회 및 검증), 채용 여부의 결정</div></div>
+        <div style="display:flex;border-bottom:0.5px solid var(--border);"><div style="flex:0 0 92px;background:var(--surface2);padding:10px 12px;font-weight:600;">수집항목</div><div style="padding:10px 12px;"><b>[필수]</b> 성명, 생년월일, 국적, 주소·거주지, 이메일, 전화·휴대폰 등 연락처<br><b>[선택]</b> 학력, 어학·자격, 보훈·장애, 병역, 경력, 자기소개, 신체(사진), 기타 지원서 기재정보</div></div>
+        <div style="display:flex;border-bottom:0.5px solid var(--border);"><div style="flex:0 0 92px;background:var(--surface2);padding:10px 12px;font-weight:600;">보유·이용기간</div><div style="padding:10px 12px;">동의일부터 채용절차 종료 시까지 보유·이용하며, 이후 지체 없이 파기합니다. (불합격자 서류는 채용절차법에 따라 반환 청구 가능)</div></div>
+        <div style="display:flex;"><div style="flex:0 0 92px;background:var(--surface2);padding:10px 12px;font-weight:600;">거부 권리</div><div style="padding:10px 12px;">필수 정보 동의는 채용 심사를 위해 필수이며, 미동의 시 지원이 제한됩니다. 선택·민감정보 동의는 거부할 수 있고, 거부해도 지원은 가능하나 심사에 참고되지 않을 수 있습니다.</div></div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;background:var(--surface2);">
+          <input type="checkbox" id="consentAll" onchange="toggleAllConsent(this)" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;">
+          <span style="font-weight:600;color:var(--text);">전체 동의</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;">
+          <input type="checkbox" id="consentRequired" onchange="updateConsentBtn()" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;">
+          <span><b style="color:var(--accent);">[필수]</b> 필수적 정보(성명·생년월일·국적·주소·연락처 등)의 수집·이용에 동의합니다.</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;">
+          <input type="checkbox" id="consentOptional" onchange="updateConsentBtn()" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;">
+          <span>[선택] 선택적 정보(학력·경력·자격·어학·자기소개 등)의 수집·이용에 동의합니다.</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;">
+          <input type="checkbox" id="consentSensitive" onchange="updateConsentBtn()" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;">
+          <span>[선택] 민감정보(건강·장애 관련, 장애 등록자에 한함)의 수집·이용에 동의합니다.</span>
+        </label>
+      </div>
+    </div>
+    <div style="padding:14px 26px;border-top:0.5px solid var(--border);display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeConsentModal()" style="padding:11px 20px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:10px;background:#fff;color:var(--text2);cursor:pointer;font-family:'Pretendard',sans-serif;">취소</button>
+      <button id="consentSubmitBtn" disabled onclick="agreeConsent()" style="padding:11px 22px;font-size:14px;font-weight:600;border:none;border-radius:10px;background:var(--gray-400);color:#fff;cursor:not-allowed;font-family:'Pretendard',sans-serif;">동의하고 지원서 작성 →</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div class="nav-bar hidden" id="navBar">
@@ -512,18 +561,22 @@ async function loadLanding() {
       if (l2) l2.innerHTML = logoHtml;
     }
 
-    // 히어로(about): 이미지가 있으면 화면 양옆 꽉 차게 배경으로 표시(제목/라벨/본문 숨김)
+    // 히어로(about): 이미지는 화면 양옆 꽉 차게 배경으로, 텍스트는 반투명 흰 박스에 함께 표시
     if (by.about) {
       const heroEl = document.getElementById('lpHero');
+      const titleEl = document.getElementById('lpHeroTitle');
       const heroC = document.getElementById('lpAboutContent');
       if (by.about.image_url) {
         heroEl.classList.add('has-image');
-        heroEl.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.5) 100%), url("${by.about.image_url}")`;
-        document.getElementById('lpHeroTitle').style.display = 'none';
+        heroEl.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.18) 100%), url("${by.about.image_url}")`;
         document.getElementById('lpHeroEyebrow').style.display = 'none';
-        heroC.style.display = 'none';
+        // 제목(있으면 커스텀, 없으면 기본 유지) — 줄바꿈 지원
+        if (by.about.title) titleEl.innerHTML = escapeHtml(by.about.title).replace(/\n/g,'<br>');
+        // 본문 텍스트: 있으면 흰 박스 안에 표시, 없으면 숨김
+        if (by.about.content && by.about.content.trim()) { heroC.textContent = by.about.content; heroC.style.display=''; }
+        else { heroC.style.display='none'; }
       } else {
-        document.getElementById('lpHeroTitle').textContent = by.about.title || '엘앤티렉서스(주)';
+        titleEl.textContent = by.about.title || '엘앤티렉서스(주)';
         heroC.textContent = by.about.content || '';
       }
     }
@@ -729,6 +782,7 @@ let applicationId = null;
 let jobPostingId = JOB_POSTING_ID;
 let jobTitle = '';
 let skills = [];
+let _privacyConsent = null; // 개인정보 동의 상태 {required, optional, sensitive, at}
 
 const fd = {
   basic:{}, education:[{}], career:[{}],
@@ -1121,7 +1175,55 @@ function showErr(el, msg) {
 }
 
 // ── 폼 진입 ──────────────────────────────────────────────
-async function showForm() {
+// 지원서 작성 전 개인정보 수집·이용 동의 게이트 (필수 미동의 시 작성 불가)
+function showForm() {
+  if (!_privacyConsent) { openConsentModal(); return; }
+  _showFormInner();
+}
+
+// ── 개인정보 수집·이용 동의 모달 ─────────────────────────
+function openConsentModal() {
+  ['consentAll','consentRequired','consentOptional','consentSensitive'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.checked=false;
+  });
+  updateConsentBtn();
+  document.getElementById('consentModal').style.display='flex';
+}
+function closeConsentModal() {
+  document.getElementById('consentModal').style.display='none';
+}
+function toggleAllConsent(cb) {
+  ['consentRequired','consentOptional','consentSensitive'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.checked=cb.checked;
+  });
+  updateConsentBtn();
+}
+function updateConsentBtn() {
+  const req = document.getElementById('consentRequired')?.checked;
+  const opt = document.getElementById('consentOptional')?.checked;
+  const sen = document.getElementById('consentSensitive')?.checked;
+  const all = document.getElementById('consentAll');
+  if (all) all.checked = !!(req && opt && sen);
+  const btn = document.getElementById('consentSubmitBtn');
+  if (btn) {
+    btn.disabled = !req;
+    btn.style.background = req ? 'var(--accent)' : 'var(--gray-400)';
+    btn.style.cursor = req ? 'pointer' : 'not-allowed';
+  }
+}
+function agreeConsent() {
+  if (!document.getElementById('consentRequired').checked) { showToast('필수 항목에 동의해야 지원할 수 있습니다'); return; }
+  _privacyConsent = {
+    required: true,
+    optional: !!document.getElementById('consentOptional').checked,
+    sensitive: !!document.getElementById('consentSensitive').checked,
+    at: new Date().toISOString()
+  };
+  closeConsentModal();
+  _showFormInner();
+}
+
+async function _showFormInner() {
   startIdleTimer(); // 로그인 후 30분 무활동 자동 로그아웃 시작
   hideAllViews();
   document.getElementById('mainHeader').style.display = '';
@@ -1265,10 +1367,10 @@ function buildPayload(isDraft) {
     photo_url: fd.basic.photoUrl||null,
     veterans_status: fd.basic.veterans||'비해당',
     veterans_number: fd.basic.veteransNum||null,
-    disability_status: fd.basic.disability||'비해당',
-    disability_type: fd.basic.disabilityType||null,
-    disability_grade: fd.basic.disabilityGrade||null,
-    disability_number: fd.basic.disabilityNum||null,
+    disability_status: (_privacyConsent&&_privacyConsent.sensitive) ? (fd.basic.disability||'비해당') : '비해당',
+    disability_type: (_privacyConsent&&_privacyConsent.sensitive) ? (fd.basic.disabilityType||null) : null,
+    disability_grade: (_privacyConsent&&_privacyConsent.sensitive) ? (fd.basic.disabilityGrade||null) : null,
+    disability_number: (_privacyConsent&&_privacyConsent.sensitive) ? (fd.basic.disabilityNum||null) : null,
     military_status: fd.basic.military||null,
     military_branch: fd.basic.militaryBranch||null,
     military_rank: fd.basic.militaryRank||null,
@@ -1305,6 +1407,21 @@ async function saveSubtables() {
   await sb.from('language_skills').delete().eq('application_id', applicationId);
   const langs = (fd.extra.langs||[]).filter(l=>l.language).map(l=>({application_id:applicationId,language:l.language,test_name:l.test||null,score:l.score||null,acquired_month:l.date||null,conversation_level:l.level||null}));
   if(langs.length) await sb.from('language_skills').insert(langs);
+  // 개인정보 동의 기록 저장 (아래 SQL로 컬럼 추가 시 실제 저장됨. 컬럼 없으면 조용히 무시)
+  await saveConsent(applicationId);
+}
+
+// 개인정보 동의 이력을 applications 행에 기록 (분쟁 대비 법적 근거)
+async function saveConsent(appId) {
+  if (!appId || !_privacyConsent) return;
+  try {
+    await sb.from('applications').update({
+      privacy_consent_required: _privacyConsent.required,
+      privacy_consent_optional: _privacyConsent.optional,
+      privacy_consent_sensitive: _privacyConsent.sensitive,
+      privacy_consent_at: _privacyConsent.at
+    }).eq('id', appId);
+  } catch(e) {}
 }
 
 // ── 완료 화면 ────────────────────────────────────────────
